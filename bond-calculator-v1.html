@@ -1,0 +1,3377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ покупки облигации</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+*, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #262626;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .calculator {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator {
+                padding: 30px 20px;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #262626;
+            letter-spacing: -0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #4C4B4B;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            color: #262626;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 45px;
+            height: 3px;
+            background: #F3A80A;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #262626;
+}
+
+.input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input,
+        .input-wrapper select {
+            width: 100%;
+            padding: 18px 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 22px;
+            font-weight: 700;
+            font-family: inherit;
+            background: #FFFFFF;
+            line-height: 1.3;
+            box-sizing: border-box;
+        }
+
+        .input-wrapper input:focus,
+        .input-wrapper select:focus {
+            outline: none;
+            border-color: #F3A80A;
+            box-shadow: 0 0 0 3px rgba(243, 168, 10, 0.25);
+        }
+
+        .input-wrapper input:invalid {
+            border-color: #ef4444;
+        }
+
+        .unit {
+            position: absolute;
+            right: 20px;
+            color: #4C4B4B;
+            font-size: 18px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #262626;
+            font-size: 15px;
+        }
+
+        .input-wrapper input[type="date"] {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .input-wrapper select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='%234C4B4B' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 1 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 22px center;
+            background-size: 18px;
+            padding-right: 50px;
+        }
+
+        .result-cards {
+            display: grid;
+            gap: 20px;
+        }
+
+        .result-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 16px;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .result-card.highlight {
+            background: linear-gradient(135deg, #FFBA24 0%, #F3A80A 100%);
+            color: #262626;
+            border: none;
+            box-shadow: 0 4px 20px rgba(243, 168, 10, 0.4);
+        }
+
+        .result-card.highlight .result-value {
+            color: #262626;
+            font-weight: 800;
+        }
+
+        .result-label {
+            font-size: 15px;
+            color: #4C4B4B;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .result-card.highlight .result-label {
+            color: #262626;
+            font-weight: 700;
+        }
+
+        .result-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #262626;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 768px) {
+            .result-value {
+                font-size: 24px;
+            }
+        }
+
+        .result-details {
+            font-size: 14px;
+            color: #4C4B4B;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .result-card.highlight .result-details {
+            color: #262626;
+            opacity: 0.9;
+        }
+
+        .coupons-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .coupon-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .coupon-item:last-child {
+            border-bottom: none;
+        }
+
+        .coupon-label {
+            font-size: 15px;
+            color: #4C4B4B;
+            font-weight: 600;
+        }
+
+        .coupon-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #262626;
+        }
+
+        .explanation {
+            margin-top: 32px;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #4C4B4B;
+            border-left: 4px solid #F3A80A;
+        }
+
+        .explanation h3 {
+            color: #262626;
+            margin-bottom: 12px;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #4C4B4B;
+            font-size: 14px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 480px) {
+            .input-wrapper input,
+            .input-wrapper select {
+                font-size: 20px;
+                padding: 16px 18px;
+            }
+
+            .unit {
+                font-size: 16px;
+                right: 18px;
+            }
+
+            .chart-card {
+                grid-column: 1 / -1;
+            }
+
+            .chart-container {
+                position: relative;
+                height: 700px !important;
+                width: 100%;
+            }
+
+            #payments-chart {
+                height: 650px !important;
+                width: 100% !important;
+                max-width: none !important;
+            }
+
+            #payments-chart[style] {
+                height: 650px !important;
+                width: 100% !important;
+            }
+
+            @media (max-width: 768px) {
+.chart-container {
+    width: 100%;
+    overflow-x: auto;
+}
+.chart-container canvas {
+    max-width: 100%;
+    height: auto;
+}
+                    height: 500px !important;
+                }
+            }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .calculator {
+                max-width: 100%;
+                padding: 20px;
+            }
+            .input-section, 
+            #search-results,
+            #load-bond-data,
+            #export-csv, 
+            #export-pdf, 
+            #clear-state,
+            .footer,
+            .chart-card {
+                display: none !important;
+            }
+            .content {
+                display: block;
+            }
+            .result-section {
+                width: 100%;
+            }
+            .result-cards {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .result-card {
+                background: white;
+                border: 1px solid #ccc;
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+            .result-card.highlight {
+                background: #fff3cd;
+                border-color: #ffc107;
+            }
+            .result-label {
+                color: #333;
+            }
+            .result-value {
+                color: black;
+                font-size: 18px;
+            }
+            .section-title::after {
+                display: none;
+            }
+            @page {
+                margin: 1cm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator" role="main" aria-label="Калькулятор облигаций">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Анализ покупки облигации</h1>
+                    <p>Полный расчёт доходности, окупаемости переплаты и налоговых последствий</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <h2 class="section-title">Параметры инвестиций</h2>
+
+                <div class="input-group">
+                    <label for="bond-search">Поиск облигации</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="bond-search" placeholder="Введите ISIN (RU000A1038V6) или название (ОФЗ 26238)">
+                    </div>
+                    <div style="font-size: 13px; color: #4C4B4B; margin-top: 6px;">
+                        Можно ввести ISIN или часть названия облигации/эмитента
+                    </div>
+                </div>
+
+                <div id="search-results" style="margin-bottom: 24px; display: none;">
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; max-height: 300px; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="color: #262626;">Результаты поиска:</strong>
+                            <button id="clear-search" style="background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px;">✕ Очистить</button>
+                        </div>
+                        <div id="search-results-list" class="coupons-list"></div>
+                    </div>
+                </div>
+
+                <button id="load-bond-data" style="background-color: #F3A80A; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 24px; width: 100%;">Загрузить данные об облигации</button>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+                    <button id="export-csv" style="flex: 1; background: #fff; color: #262626; border: 2px solid #e2e8f0; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">Экспорт CSV</button>
+                    <button id="export-pdf" style="flex: 1; background: #fff; color: #262626; border: 2px solid #e2e8f0; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">Экспорт TXT</button>
+                    <button id="clear-state" style="flex: 1; background: #fff; color: #262626; border: 2px solid #e2e8f0; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">Очистить</button>
+                </div>
+
+                <div class="input-group">
+                    <label for="investment">Сумма инвестирования</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="investment" value="300000" min="1000" step="1000">
+                        <span class="unit">₽</span>
+                    </div>
+                </div>
+
+                <div class="input-group" id="currency-group" style="display: none;">
+                    <label for="currency">Валюта облигации</label>
+                    <div class="input-wrapper">
+                        <select id="currency">
+                            <option value="RUB" selected>🇷🇺 RUB (Российский рубль)</option>
+                            <option value="USD">🇺🇸 USD (Доллар США)</option>
+                            <option value="EUR">🇪🇺 EUR (Евро)</option>
+                            <option value="CNY">🇨🇳 CNY (Китайский юань)</option>
+                            <option value="CHF">🇨🇭 CHF (Швейцарский франк)</option>
+                            <option value="GBP">🇬🇧 GBP (Британский фунт)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group" id="exchange-rate-group" style="display: none;">
+                    <label for="exchange-rate">Курс валюты к рублю</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="exchange-rate" value="1.00" min="0.01" step="0.01">
+                        <span class="unit">₽</span>
+                    </div>
+                    <div style="font-size: 13px; color: #4C4B4B; margin-top: 6px;">
+                        Для RUB = 1, для USD/EUR/CNY — текущий курс ЦБ
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="nominal">Номинал облигации</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="nominal" value="" min="100" step="100" placeholder="Загрузится из API">
+                        <span class="unit">₽</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="price">Цена покупки (% от номинала)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="price" value="" min="100" max="200" step="0.01" placeholder="Загрузится из API">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="nkd">НКД на дату покупки</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="nkd" value="" min="0" step="0.01" placeholder="Загрузится из API">
+                        <span class="unit">₽</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="coupon-rate">Купонная ставка (% годовых)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="coupon-rate" value="" min="0" max="100" step="0.01" placeholder="Загрузится из API">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="coupon-period">Периодичность выплаты купона в год</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="coupon-period" value="" min="1" max="12" step="1" placeholder="Загрузится из API">
+                        <span class="unit">раз</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="purchase-date">Дата покупки</label>
+                    <div class="input-wrapper">
+                        <input type="date" id="purchase-date">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="maturity">Дата погашения</label>
+                    <div class="input-wrapper">
+                        <input type="date" id="maturity" value="" placeholder="Загрузится из API">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="tax-rate">Налоговая ставка (%)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="tax-rate" value="13.00" min="0" max="100" step="0.1">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="account-type">Тип счёта</label>
+                    <div class="input-wrapper">
+                        <select id="account-type">
+                            <option value="standard" selected>Стандартный (13% налог)</option>
+                            <option value="iis">ИИС тип А (вычет на взносы)</option>
+                            <option value="iis-b">ИИС тип Б (освобождение дохода)</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 13px; color: #4C4B4B; margin-top: 6px;">
+                        ИИС: до 400 тыс. ₽ в год — возврат до 52 тыс. ₽
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="commission">Комиссия брокера при покупке (%)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="commission" value="0.05" min="0" max="10" step="0.01">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="next-coupon">Дата следующего купона</label>
+                    <div class="input-wrapper">
+                        <input type="date" id="next-coupon" value="" placeholder="Загрузится из API">
+                    </div>
+                </div>
+
+                <!-- Скрытое поле для точной суммы купона из API -->
+                <input type="hidden" id="coupon-value" value="">
+                
+                <div class="input-group">
+                    <label for="deposit-rate">Ставка депозита для сравнения (%)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="deposit-rate" value="13.56" min="0" max="50" step="0.01">
+                        <span class="unit">%</span>
+                    </div>
+                    <div style="font-size: 13px; color: #4C4B4B; margin-top: 6px;">
+                        <span id="deposit-rate-source">Средняя ставка топ-10 банков</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h2 class="section-title">Результаты расчёта</h2>
+
+                <div class="result-card chart-card">
+                    <div class="result-label">Купонные выплаты и окупаемость переплаты</div>
+                    <div class="chart-container">
+                        <canvas id="payments-chart"></canvas>
+                    </div>
+                    <div class="result-details">Накопленный чистый купонный доход и уровень переплаты (пересечение — момент окупаемости)</div>
+                </div>
+
+                <div id="amortization-chart-card" class="result-card" style="display: none;">
+                    <div class="result-label">График амортизации</div>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="amortization-chart"></canvas>
+                    </div>
+                    <div class="result-details">Остаток номинала и размер частичного погашения по периодам</div>
+                </div>
+
+                <div class="result-card highlight">
+                    <div class="result-label">Срок окупаемости переплаты</div>
+                    <div class="result-value" id="payback-time">—</div>
+                    <div class="result-details">Заполняется автоматически</div>
+                </div>
+
+                <div style="height: 20px;"></div> <!-- Промежуток между карточками -->
+
+                <div class="result-card">
+                    <div class="result-label">Название облигации</div>
+                    <div class="result-value" id="bond-name-result">—</div>
+                    <div class="result-details">Полное наименование облигации</div>
+                </div>
+
+                <div class="result-card" id="bond-type-card" style="display: none;">
+                    <div class="result-label">Тип облигации</div>
+                    <div class="result-value" id="bond-type-result" style="font-size: 20px;">—</div>
+                    <div class="result-details" id="bond-type-details"></div>
+                </div>
+
+                <div class="result-card highlight" id="bond-offer-card" style="display: none;">
+                    <div class="result-label">Дата оферты</div>
+                    <div class="result-value" id="bond-offer-result" style="font-size: 20px;">—</div>
+                    <div class="result-details" id="bond-offer-details"></div>
+                </div>
+
+                <div class="result-card" id="duration-card" style="display: none;">
+                    <div class="result-label">Дюрация</div>
+                    <div class="result-value" id="duration-result" style="font-size: 20px;">—</div>
+                    <div class="result-details" id="duration-details">дней</div>
+                </div>
+
+                <div class="result-card" id="zspread-card" style="display: none;">
+                    <div class="result-label">Z-Spread</div>
+                    <div class="result-value" id="zspread-result">—</div>
+                    <div class="result-details">к гос. облигациям</div>
+                </div>
+
+                <div class="result-card" id="gspread-card" style="display: none;">
+                    <div class="result-label">G-Spread</div>
+                    <div class="result-value" id="gspread-result">—</div>
+                    <div class="result-details">к ОФЗ</div>
+                </div>
+
+                <div class="result-card" id="deposit-comparison-card" style="display: none;">
+                    <div class="result-label">Сравнение с депозитом</div>
+                    <div class="result-value" id="deposit-comparison-result" style="font-size: 22px;">—</div>
+                    <div class="result-details" id="deposit-comparison-details"></div>
+                </div>
+
+                <div class="result-card" id="floater-simulator-card" style="display: none;">
+                    <div class="result-label">Что-если: симулятор флоатера</div>
+                    <div style="margin-top: 12px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 13px; color: #4C4B4B; margin-bottom: 10px;">Измените ключевую ставку ЦБ:</div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <input type="number" id="floater-rate-change" value="15.00" step="0.25" style="width: 90px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px;">
+                            <span style="font-size: 14px; color: #4C4B4B;">%</span>
+                            <button id="floater-simulate-btn" style="flex: 1; padding: 10px 16px; background: #F3A80A; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; opacity: 1;">Пересчитать</button>
+                        </div>
+                        <div id="floater-sim-result" style="font-size: 13px; color: #262626; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            —
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card" id="similar-bonds-card" style="display: none;">
+                    <div class="result-label">Похожие облигации эмитента</div>
+                    <div id="similar-bonds-list" class="coupons-list" style="font-size:13px;"></div>
+                </div>
+
+                <div class="result-cards">
+                    <div class="result-card">
+                        <div class="result-label">Чистая цена</div>
+                        <div class="result-value" id="clean-price">—</div>
+                        <div class="result-details">Без НКД</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Грязная цена</div>
+                        <div class="result-value" id="dirty-price">—</div>
+                        <div class="result-details">С учётом НКД</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Количество облигаций</div>
+                        <div class="result-value" id="bond-count">—</div>
+                        <div class="result-details">Максимум при заданной сумме</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Общая стоимость покупки</div>
+                        <div class="result-value" id="total-cost">—</div>
+                        <div class="result-details">Грязная цена × количество</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Остаток средств</div>
+                        <div class="result-value" id="remainder">—</div>
+                        <div class="result-details">Неиспользованный остаток</div>
+                    </div>
+
+                    <!-- Группа купонов в нужной последовательности -->
+                    <div class="result-card">
+                        <div class="result-label">Купонные выплаты</div>
+                        <div class="coupons-list">
+                            <div class="coupon-item">
+                                <span class="coupon-label">Купон за период (на обл.)</span>
+                                <span class="coupon-value" id="period-coupon">—</span>
+                            </div>
+                            <div class="coupon-item">
+                                <span class="coupon-label">Чистый купон (на обл.)</span>
+                                <span class="coupon-value" id="net-coupon">—</span>
+                            </div>
+                            <div class="coupon-item">
+                                <span class="coupon-label">Общий купон (1 выплата, до нал.)</span>
+                                <span class="coupon-value" id="gross-total-coupon">—</span>
+                            </div>
+                            <div class="coupon-item">
+                                <span class="coupon-label">Общий чистый купон (1 выплата)</span>
+                                <span class="coupon-value" id="total-net-coupon">—</span>
+                            </div>
+                            <div class="coupon-item">
+                                <span class="coupon-label">Годовой купон (на обл.)</span>
+                                <span class="coupon-value" id="annual-coupon">—</span>
+                            </div>
+                            <div class="coupon-item">
+                                <span class="coupon-label">Чистый годовой купон (всего)</span>
+                                <span class="coupon-value" id="net-annual-total">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Переплата за облигацию</div>
+                        <div class="result-value" id="overpayment-per-bond">—</div>
+                        <div class="result-details">Грязная цена − номинал</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Общая переплата</div>
+                        <div class="result-value" id="total-overpayment">—</div>
+                        <div class="result-details">Включая НКД</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Текущая купонная доходность</div>
+                        <div class="result-value" id="current-yield">—</div>
+                        <div class="result-details">Годовых, до нал.</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Доходность к погашению (YTM)</div>
+                        <div class="result-value" id="ytm">—</div>
+                        <div class="result-details">Годовых, до нал.</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Эффективная доходность (с реинвестированием)</div>
+                        <div class="result-value" id="effective-yield">—</div>
+                        <div class="result-details">Годовых, с учётом реинвестирования купонов</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Чистая доходность (после нал.)</div>
+                        <div class="result-value" id="net-yield">—</div>
+                        <div class="result-details">Годовых, до погашения</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Купонный доход до погашения</div>
+                        <div class="result-value" id="total-coupon-to-maturity">—</div>
+                        <div class="result-details">Общий чистый купонный доход</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Сумма на дату погашения</div>
+                        <div class="result-value" id="final-amount">—</div>
+                        <div class="result-details">Номинал + чистые купоны</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Чистая прибыль</div>
+                        <div class="result-value" id="net-profit">—</div>
+                        <div class="result-details">После всех расходов и налогов</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Комиссия брокера</div>
+                        <div class="result-value" id="commission-amount">—</div>
+                        <div class="result-details">При покупке</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Уплачено налога</div>
+                        <div class="result-value" id="total-tax-paid">—</div>
+                        <div class="result-details">Налог с купонов за весь срок</div>
+                    </div>
+
+                    <div class="result-card" id="iis-tax-card" style="display: none;">
+                        <div class="result-label">Налоговый вычет ИИС</div>
+                        <div class="result-value" id="iis-tax-benefit">—</div>
+                        <div class="result-details" id="iis-tax-details"></div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">НКД при погашении</div>
+                        <div class="result-value" id="nkd-at-maturity">—</div>
+                        <div class="result-details">НКД с посл. купона до погашения</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Количество купонных выплат</div>
+                        <div class="result-value" id="coupon-count">—</div>
+                        <div class="result-details">До даты погашения</div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-label">Дней до погашения</div>
+                        <div class="result-value" id="days-to-maturity">—</div>
+                        <div class="result-details" id="days-to-maturity-details">От даты покупки</div>
+                    </div>
+
+                </div>
+
+                
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Калькулятор предоставляет ориентировочные данные. Для точных инвестиционных решений проконсультируйтесь со специалистом.</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SECTION: CONSTANTS
+        // ============================================
+        
+        // --- Основные константы ---
+        const DEFAULT_NOMINAL = 1000; // Номинал по умолчанию (в валюте облигации)
+        const DAYS_IN_YEAR = 365; // Дней в году для расчётов
+        const DEFAULT_COUPON_PERIOD_DAYS = 90; // Стандартный период купона (дней)
+        const DEFAULT_COUPON_FREQUENCY = 4; // Выплат в год по умолчанию
+        const MAX_ITERATIONS = 100; // Макс. итераций для метода Ньютона
+        const TOLERANCE = 1e-8; // Точность сходимости IRR
+        const CACHE_TTL = 5 * 60 * 1000; // Кэш API: 5 минут
+        const MAX_HOLIDAY_ITERATIONS = 10;
+        const CORS_PROXY_URL = ''; // CORS-прокси (оставить пустым для прямого доступа)
+
+        // --- Константы валют ---
+        const CURRENCIES = {
+            RUB: { symbol: '₽', name: 'Российский рубль', flag: '🇷🇺' },
+            USD: { symbol: '$', name: 'Доллар США', flag: '🇺🇸' },
+            EUR: { symbol: '€', name: 'Евро', flag: '🇪🇺' },
+            CNY: { symbol: '¥', name: 'Китайский юань', flag: '🇨🇳' },
+            CHF: { symbol: 'Fr', name: 'Швейцарский франк', flag: '🇨🇭' },
+            GBP: { symbol: '£', name: 'Британский фунт', flag: '🇬🇧' }
+        };
+        const DEFAULT_CURRENCY = 'RUB';
+
+        // === Константы MOEX API ===
+        const MOEX_BASE_URL = "https://iss.moex.com/iss";
+        const MOEX_ENGINE = "stock";
+        const MOEX_MARKET = "bonds";
+        const MOEX_BOARDS = ["TQCB", "TQOB", "TQOS", "PACT"];
+        
+        // Колонки для запросов к API
+        const MOEX_SECURITIES_COLUMNS = 'SECID,ISIN,SHORTNAME,BOARDID,NOMINAL,INITIALNOMINAL,FACEVALUE,COUPONVALUE,COUPONPERCENT,' +
+                                        'MATDATE,ACCRUEDINT,PREVPRICE,NEXTCOUPON,COUPONPERIOD,CUPTYPE,BONDTYPE,BONDSUBTYPE,' +
+                                        'PUTOPTIONDATE,CALLOPTIONDATE,OFFERDATE,NOMINALCURRENCY,FACEUNIT,NAME,EMITENT_FULL_NAME_RU';
+        const MOEX_SEARCH_COLUMNS = 'SECID,ISIN,SHORTNAME,BOARDID,NOMINAL,MATDATE,COUPONPERCENT,NAME,EMITENT_FULL_NAME_RU';
+        const MOEX_MARKETDATA_COLUMNS = 'SECID,LAST,WAPRICE,LCLOSEPRICE,BID,OFFER,PREVPRICE,CURRENCY,NOMINALCURRENCY,DURATION,ZSPREAD,GSPREAD';
+        
+        // Кэш для поиска по названию
+        const searchCache = new Map();
+        const SEARCH_CACHE_TTL = 10 * 60 * 1000; // 10 минут
+        
+        // --- Курсы валют MOEX ---
+        const CURRENCY_PAIRS = {
+            'USD': 'USD000UTSTOM',
+            'EUR': 'EUR000UTSTOM',
+            'CNY': 'CNYRUB_TOM',
+            'CHF': 'CHFRUB_TOM',
+            'GBP': 'GBPRUB_TOM'
+        };
+        const MOEX_CURRENCY_URL = "https://iss.moex.com/iss/engines/currency/markets/selt/securities";
+        const MOEX_RATES_URL = "https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json";
+        const currencyRateCache = new Map();
+        const CURRENCY_CACHE_TTL = 5 * 60 * 1000;
+
+        // Очистка кэша курсов валют по TTL
+        setInterval(() => {
+            const now = Date.now();
+            for (const [key, value] of currencyRateCache.entries()) {
+                if (now - value.timestamp > CURRENCY_CACHE_TTL) {
+                    currencyRateCache.delete(key);
+                }
+            }
+            // Очистка кэша поиска
+            for (const [key, value] of searchCache.entries()) {
+                if (now - value.timestamp > SEARCH_CACHE_TTL) {
+                    searchCache.delete(key);
+                }
+            }
+        }, 60000); // Проверка каждую минуту
+
+        async function fetchCurrencyRate(currency) {
+            if (currency === 'RUB') return 1;
+            const cached = currencyRateCache.get(currency);
+            if (cached && (Date.now() - cached.timestamp) < CURRENCY_CACHE_TTL) return cached.rate;
+            try {
+                // Для CHF и GBP используем кросс-курсы (MOEX не торгует эти пары напрямую)
+                const fallbackRates = { USD: 90, EUR: 98, CNY: 12.5, CHF: 105, GBP: 115 };
+                
+                // Используем новый API MOEX для курсов валют
+                const r = await fetch(MOEX_RATES_URL);
+                if (!r.ok) throw new Error('MOEX API error');
+                const d = await r.json();
+                
+                let rate = null;
+                
+                // Пробуем получить из рыночных курсов (wap_rates)
+                if (d.wap_rates && d.wap_rates.data && d.wap_rates.data.length > 0) {
+                    const cols = d.wap_rates.columns;
+                    const secidIdx = cols.indexOf('secid');
+                    const priceIdx = cols.indexOf('price');
+                    
+                    for (const row of d.wap_rates.data) {
+                        const secid = row[secidIdx];
+                        if (secid === CURRENCY_PAIRS[currency]) {
+                            rate = parseFloat(row[priceIdx]);
+                            break;
+                        }
+                    }
+                }
+                
+                // Если не нашли, пробуем курсы ЦБ (cbrf)
+                if (!rate && d.cbrf && d.cbrf.data && d.cbrf.data.length > 0) {
+                    const cols = d.cbrf.columns;
+                    const fieldMap = {
+                        'USD': cols.indexOf('CBRF_USD_LAST'),
+                        'EUR': cols.indexOf('CBRF_EUR_LAST'),
+                        'CNY': cols.indexOf('CBRF_CNY_LAST')
+                    };
+                    const idx = fieldMap[currency];
+                    if (idx >= 0 && d.cbrf.data[0][idx]) {
+                        rate = parseFloat(d.cbrf.data[0][idx]);
+                    }
+                }
+                
+                // Резерв: старые имена полей ЦБ (индексы)
+                if (!rate && d.cbrf && d.cbrf.data && d.cbrf.data.length > 0) {
+                    const row = d.cbrf.data[0];
+                    if (currency === 'USD' && row[3]) rate = parseFloat(row[3]);
+                    if (currency === 'EUR' && row[6]) rate = parseFloat(row[6]);
+                }
+                
+                // Если курс не найден (CHF, GBP), используем резервный
+                if (!rate) {
+                    rate = fallbackRates[currency] || null;
+                }
+                
+                if (rate && rate > 0) {
+                    currencyRateCache.set(currency, { rate, timestamp: Date.now() });
+                    return rate;
+                }
+                return null;
+            } catch (e) {
+                const fallbackRates = { USD: 90, EUR: 98, CNY: 12.5, CHF: 105, GBP: 115 };
+                return fallbackRates[currency] || null;
+            }
+        }
+
+        // ============================================
+        // SECTION: DOM ELEMENTS
+        // ============================================
+        
+        // --- Элементы ввода ---
+        const investmentInput = document.getElementById('investment');
+        const nominalInput = document.getElementById('nominal');
+        const priceInput = document.getElementById('price');
+        const nkdInput = document.getElementById('nkd');
+        const couponRateInput = document.getElementById('coupon-rate');
+        const couponPeriodInput = document.getElementById('coupon-period');
+        const purchaseDateInput = document.getElementById('purchase-date');
+        const maturityInput = document.getElementById('maturity');
+        const taxRateInput = document.getElementById('tax-rate');
+        const nextCouponInput = document.getElementById('next-coupon');
+        const couponValueInput = document.getElementById('coupon-value');
+        const commissionInput = document.getElementById('commission');
+
+        // Элементы для валюты
+        const currencySelect = document.getElementById('currency');
+        const exchangeRateInput = document.getElementById('exchange-rate');
+
+        // Элементы результатов
+        const cleanPriceElement = document.getElementById('clean-price');
+        const dirtyPriceElement = document.getElementById('dirty-price');
+        const bondCountElement = document.getElementById('bond-count');
+        const totalCostElement = document.getElementById('total-cost');
+        const remainderElement = document.getElementById('remainder');
+        const periodCouponElement = document.getElementById('period-coupon');
+        const netCouponElement = document.getElementById('net-coupon');
+        const grossTotalCouponElement = document.getElementById('gross-total-coupon');
+        const totalNetCouponElement = document.getElementById('total-net-coupon');
+        const annualCouponElement = document.getElementById('annual-coupon');
+        const netAnnualTotalElement = document.getElementById('net-annual-total');
+        const overpaymentPerBondElement = document.getElementById('overpayment-per-bond');
+        const totalOverpaymentElement = document.getElementById('total-overpayment');
+        const currentYieldElement = document.getElementById('current-yield');
+        const ytmElement = document.getElementById('ytm');
+        const netYieldElement = document.getElementById('net-yield');
+        const totalCouponToMaturityElement = document.getElementById('total-coupon-to-maturity');
+        const finalAmountElement = document.getElementById('final-amount');
+        const netProfitElement = document.getElementById('net-profit');
+        const commissionAmountElement = document.getElementById('commission-amount');
+        const totalTaxPaidElement = document.getElementById('total-tax-paid');
+        const nkdAtMaturityElement = document.getElementById('nkd-at-maturity');
+        const couponCountElement = document.getElementById('coupon-count');
+        const daysToMaturityElement = document.getElementById('days-to-maturity');
+        const paybackTimeElement = document.getElementById('payback-time');
+        const chartCanvas = document.getElementById('payments-chart');
+        const bondTypeCard = document.getElementById('bond-type-card');
+        const bondTypeResult = document.getElementById('bond-type-result');
+        const bondTypeDetails = document.getElementById('bond-type-details');
+        const bondOfferCard = document.getElementById('bond-offer-card');
+        const bondOfferResult = document.getElementById('bond-offer-result');
+        const bondOfferDetails = document.getElementById('bond-offer-details');
+
+        let paybacksChart = null;
+        let bondDataFromApi = null; // Данные об облигации из API
+
+        // Функция обновления символов валюты
+        function updateCurrencySymbols() {
+            const currency = currencySelect.value;
+            const symbol = CURRENCIES[currency]?.symbol || '₽';
+            const currencyName = CURRENCIES[currency]?.name || 'Российский рубль';
+            const flag = CURRENCIES[currency]?.flag || '🇷🇺';
+            const exchangeRate = parseFloat(exchangeRateInput.value) || 1;
+
+            // Обновляем единицы измерения для полей ввода
+            const nominalUnit = nominalInput.parentElement?.querySelector('.unit');
+            const nkdUnit = nkdInput.parentElement?.querySelector('.unit');
+            const exchangeRateUnit = exchangeRateInput.parentElement?.querySelector('.unit');
+
+            if (nominalUnit) nominalUnit.textContent = symbol;
+            // НКД из API всегда в рублях - поэтому всегда показываем ₽
+            if (nkdUnit) nkdUnit.textContent = '₽';
+            if (exchangeRateUnit) exchangeRateUnit.textContent = '₽';
+
+            // Обновляем отображение валюты в результатах
+            const currencyResultElement = document.getElementById('currency-result');
+            const exchangeRateDetailsElement = document.getElementById('exchange-rate-details');
+            if (currencyResultElement) {
+                currencyResultElement.textContent = `${flag} ${currency} (${currencyName})`;
+            }
+            if (exchangeRateDetailsElement) {
+                exchangeRateDetailsElement.textContent = `Курс: ${exchangeRate.toFixed(2)} ₽ за 1 ${currency}`;
+            }
+        }
+
+        // Функция управления видимостью полей валюты
+        function updateCurrencyVisibility(isCurrencyBond) {
+            const currencyGroup = document.getElementById('currency-group');
+            const exchangeRateGroup = document.getElementById('exchange-rate-group');
+            const currencyCard = document.getElementById('currency-card');
+            
+            if (currencyGroup) currencyGroup.style.display = isCurrencyBond ? 'block' : 'none';
+            if (exchangeRateGroup) exchangeRateGroup.style.display = isCurrencyBond ? 'block' : 'none';
+            if (currencyCard) currencyCard.style.display = isCurrencyBond ? 'block' : 'none';
+        }
+
+        // Debounce функция для уменьшения частоты вычислений
+        function debounce(func, delay) {
+            let timeoutId;
+            return function (...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // ============================================
+        // SECTION: LOCAL STORAGE
+        // ============================================
+        
+        const STORAGE_KEY = 'bondCalculatorState';
+        
+        function saveState() {
+            const state = {
+                investment: investmentInput.value,
+                nominal: nominalInput.value,
+                price: priceInput.value,
+                nkd: nkdInput.value,
+                couponRate: couponRateInput.value,
+                couponPeriod: couponPeriodInput.value,
+                purchaseDate: purchaseDateInput.value,
+                maturity: maturityInput.value,
+                taxRate: taxRateInput.value,
+                commission: commissionInput.value,
+                nextCoupon: nextCouponInput.value,
+                couponValue: couponValueInput.value,
+                currency: currencySelect.value,
+                exchangeRate: exchangeRateInput.value,
+                accountType: document.getElementById('account-type')?.value || 'standard'
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {}
+        }
+        
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    if (state.investment) investmentInput.value = state.investment;
+                    if (state.nominal) nominalInput.value = state.nominal;
+                    if (state.price) priceInput.value = state.price;
+                    if (state.nkd) nkdInput.value = state.nkd;
+                    if (state.couponRate) couponRateInput.value = state.couponRate;
+                    if (state.couponPeriod) couponPeriodInput.value = state.couponPeriod;
+                    if (state.purchaseDate) purchaseDateInput.value = state.purchaseDate;
+                    if (state.maturity) maturityInput.value = state.maturity;
+                    if (state.taxRate) taxRateInput.value = state.taxRate;
+                    if (state.commission) commissionInput.value = state.commission;
+                    if (state.nextCoupon) nextCouponInput.value = state.nextCoupon;
+                    if (state.couponValue) couponValueInput.value = state.couponValue;
+                    if (state.currency) currencySelect.value = state.currency;
+                    if (state.exchangeRate) exchangeRateInput.value = state.exchangeRate;
+                    const accountTypeEl = document.getElementById('account-type');
+                    if (state.accountType && accountTypeEl) accountTypeEl.value = state.accountType;
+                    updateCurrencySymbols();
+                    updateCurrencyVisibility(state.currency !== 'RUB');
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        // ============================================
+        // SECTION: EXPORT TO CSV
+        // ============================================
+        
+        function exportToCSV() {
+            const results = {
+                'Название облигации': document.getElementById('bond-name-result').textContent,
+                'Сумма инвестирования': investmentInput.value,
+                'Номинал': nominalInput.value,
+                'Цена покупки (%)': priceInput.value,
+                'НКД': nkdInput.value,
+                'Купонная ставка (%)': couponRateInput.value,
+                'Периодичность купона': couponPeriodInput.value,
+                'Чистая цена': cleanPriceElement.textContent,
+                'Грязная цена': dirtyPriceElement.textContent,
+                'Количество облигаций': bondCountElement.textContent,
+                'Общая стоимость': totalCostElement.textContent,
+                'Переплата за облигацию': overpaymentPerBondElement.textContent,
+                'Общая переплата': totalOverpaymentElement.textContent,
+                'Текущая доходность': currentYieldElement.textContent,
+                'YTM': ytmElement.textContent,
+                'Эффективная доходность': document.getElementById('effective-yield').textContent,
+                'Чистая доходность': netYieldElement.textContent,
+                'Купонный доход до погашения': totalCouponToMaturityElement.textContent,
+                'Сумма на дату погашения': finalAmountElement.textContent,
+                'Чистая прибыль': netProfitElement.textContent,
+                'Комиссия брокера': commissionAmountElement.textContent,
+                'Уплачено налога': totalTaxPaidElement.textContent,
+                'Срок окупаемости': paybackTimeElement.textContent
+            };
+            
+            const headers = Object.keys(results).join(';');
+            const values = Object.values(results).join(';');
+            const csv = `\uFEFF${headers}\n${values}`;
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `bond-analysis-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+        
+        function exportToPDF() {
+            const bondName = document.getElementById('bond-name-result').textContent;
+            if (bondName === '—') {
+                alert('Сначала введите данные и рассчитайте');
+                return;
+            }
+            
+            const content = [
+                '═══════════════════════════════════════════════════════════',
+                '              АНАЛИЗ ОБЛИГАЦИИ',
+                '═══════════════════════════════════════════════════════════',
+                '',
+                `Название: ${bondName}`,
+                '',
+                '─ Входные данные ───────────────────────────────────────────',
+                `Сумма инвестирования: ${investmentInput.value} ₽`,
+                `Номинал: ${nominalInput.value} ₽`,
+                `Цена покупки: ${priceInput.value}%`,
+                `НКД: ${nkdInput.value} ₽`,
+                `Купонная ставка: ${couponRateInput.value}%`,
+                `Периодичность купона: ${couponPeriodInput.value} раз/год`,
+                `Дата покупки: ${purchaseDateInput.value}`,
+                `Дата погашения: ${maturityInput.value}`,
+                `Налоговая ставка: ${taxRateInput.value}%`,
+                `Комиссия брокера: ${commissionInput.value}%`,
+                '',
+                '─ Результаты расчёта ────────────────────────────────────────',
+                `Чистая цена: ${cleanPriceElement.textContent}`,
+                `Грязная цена: ${dirtyPriceElement.textContent}`,
+                `Количество облигаций: ${bondCountElement.textContent}`,
+                `Общая стоимость: ${totalCostElement.textContent}`,
+                `Остаток средств: ${remainderElement.textContent}`,
+                '',
+                '─ Купонные выплаты ──────────────────────────────────────────',
+                `Купон за период: ${periodCouponElement.textContent}`,
+                `Чистый купон: ${netCouponElement.textContent}`,
+                `Годовой купон: ${annualCouponElement.textContent}`,
+                `Чистый годовой купон (всего): ${netAnnualTotalElement.textContent}`,
+                '',
+                '─ Переплата и доходность ────────────────────────────────────',
+                `Переплата за облигацию: ${overpaymentPerBondElement.textContent}`,
+                `Общая переплата: ${totalOverpaymentElement.textContent}`,
+                `Срок окупаемости: ${paybackTimeElement.textContent}`,
+                '',
+                '─ Доходность ────────────────────────────────────────────────',
+                `Текущая доходность: ${currentYieldElement.textContent}`,
+                `YTM: ${ytmElement.textContent}`,
+                `Эффективная доходность: ${document.getElementById('effective-yield').textContent}`,
+                `Чистая доходность: ${netYieldElement.textContent}`,
+                '',
+                '─ Итоговые суммы ────────────────────────────────────────────',
+                `Купонный доход до погашения: ${totalCouponToMaturityElement.textContent}`,
+                `Сумма на дату погашения: ${finalAmountElement.textContent}`,
+                `Чистая прибыль: ${netProfitElement.textContent}`,
+                `Комиссия брокера: ${commissionAmountElement.textContent}`,
+                `Уплачено налога: ${totalTaxPaidElement.textContent}`,
+                '',
+                '─ Дополнительно ────────────────────────────────────────────',
+                `Количество купонных выплат: ${couponCountElement.textContent}`,
+                `Дней до погашения: ${daysToMaturityElement.textContent}`,
+                '',
+                '═══════════════════════════════════════════════════════════',
+                `Дата: ${new Date().toLocaleDateString('ru-RU')}`,
+                '═══════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `bond-analysis-${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+        }
+
+        // ============================================
+        // SECTION: ERROR HANDLING
+        // ============================================
+        
+        function showFieldError(inputId, message) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.style.borderColor = '#ef4444';
+            input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.25)';
+            input.title = message;
+        }
+        
+        function clearFieldError(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            input.title = '';
+        }
+        
+        function clearAllFieldErrors() {
+            const fieldIds = ['investment', 'nominal', 'price', 'nkd', 'coupon-rate', 
+                            'coupon-period', 'purchase-date', 'maturity', 'tax-rate', 'commission'];
+            fieldIds.forEach(id => clearFieldError(id));
+        }
+        
+        // Real-time валидация полей при вводе
+        function validateField(input) {
+            const id = input.id;
+            const value = input.value;
+            const numValue = parseFloat(value);
+            
+            clearFieldError(id);
+            
+            switch(id) {
+                case 'investment':
+                    if (value && (isNaN(numValue) || numValue <= 0)) {
+                        showFieldError(id, 'Должно быть больше 0');
+                    }
+                    break;
+                case 'nominal':
+                    if (value && (isNaN(numValue) || numValue <= 0)) {
+                        showFieldError(id, 'Должно быть больше 0');
+                    }
+                    break;
+                case 'price':
+                    if (value && (isNaN(numValue) || numValue <= 0)) {
+                        showFieldError(id, 'Должно быть больше 0');
+                    }
+                    break;
+                case 'nkd':
+                    if (value && (isNaN(numValue) || numValue < 0)) {
+                        showFieldError(id, 'Не может быть отрицательным');
+                    }
+                    break;
+                case 'coupon-rate':
+                    if (value && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
+                        showFieldError(id, 'От 0 до 100%');
+                    }
+                    break;
+                case 'coupon-period':
+                    if (value && (isNaN(numValue) || numValue < 1 || numValue > 12)) {
+                        showFieldError(id, 'От 1 до 12');
+                    }
+                    break;
+                case 'tax-rate':
+                    if (value && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
+                        showFieldError(id, 'От 0 до 100%');
+                    }
+                    break;
+                case 'commission':
+                    if (value && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
+                        showFieldError(id, 'От 0 до 100%');
+                    }
+                    break;
+            }
+        }
+        
+        function highlightErrorFields(errorMessage) {
+            clearAllFieldErrors();
+            const lowerMsg = errorMessage.toLowerCase();
+            if (lowerMsg.includes('инвестирование')) showFieldError('investment', errorMessage);
+            else if (lowerMsg.includes('номинал')) showFieldError('nominal', errorMessage);
+            else if (lowerMsg.includes('цена')) showFieldError('price', errorMessage);
+            else if (lowerMsg.includes('ндс') || lowerMsg.includes('накопленн')) showFieldError('nkd', errorMessage);
+            else if (lowerMsg.includes('купон')) showFieldError('coupon-rate', errorMessage);
+            else if (lowerMsg.includes('периодичност')) showFieldError('coupon-period', errorMessage);
+            else if (lowerMsg.includes('дата покупки')) showFieldError('purchase-date', errorMessage);
+            else if (lowerMsg.includes('погашени')) showFieldError('maturity', errorMessage);
+            else if (lowerMsg.includes('налог')) showFieldError('tax-rate', errorMessage);
+            else if (lowerMsg.includes('комисс')) showFieldError('commission', errorMessage);
+        }
+
+        // События с debounce и сохранением состояния
+        const inputs = [
+            investmentInput, nominalInput, priceInput, nkdInput, couponRateInput,
+            couponPeriodInput, purchaseDateInput, maturityInput, taxRateInput, nextCouponInput,
+            couponValueInput, commissionInput
+        ];
+        
+        // Inputs that trigger recalculation on change
+        inputs.forEach(input => input.addEventListener('input', debounce(() => {
+            saveState();
+            clearAllFieldErrors();
+            calculate();
+        }, 300)));
+        
+        // Deposit rate triggers recalculation too
+        const depositRateEl = document.getElementById('deposit-rate');
+        if (depositRateEl) {
+            depositRateEl.addEventListener('input', debounce(() => {
+                calculate();
+            }, 300));
+        }
+
+        // Account type triggers recalculation too
+        const accountTypeEl = document.getElementById('account-type');
+        if (accountTypeEl) {
+            accountTypeEl.addEventListener('change', debounce(() => {
+                calculate();
+            }, 300));
+        }
+        
+        // События для валюты
+        currencySelect.addEventListener('change', () => {
+            updateCurrencySymbols();
+            saveState();
+            // Автоматически загружаем курс при смене валюты
+            const currency = currencySelect.value;
+            if (currency !== 'RUB') {
+                fetchCurrencyRate(currency).then(rate => {
+                    if (rate) {
+                        exchangeRateInput.value = rate.toFixed(4);
+                    }
+                    calculate();
+                });
+            } else {
+                exchangeRateInput.value = '1.00';
+                calculate();
+            }
+        });
+        exchangeRateInput.addEventListener('input', debounce(() => {
+            saveState();
+            clearAllFieldErrors();
+            calculate();
+        }, 300));
+
+        // Инициализация символов валюты
+        updateCurrencySymbols();
+        // Скрываем поля валюты по умолчанию (для RUB)
+        updateCurrencyVisibility(false);
+
+        // ============================================
+        // SECTION: HELPER FUNCTIONS
+        // ============================================
+        
+        // --- Форматирование ---
+        // Форматирование чисел с пробелами
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined || !isFinite(num)) return '0.00';
+            if (isNaN(num)) return '0.00';
+            return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+
+        // ============================================
+        // SECTION: DATE UTILITIES
+        // ============================================
+        
+        // --- Расчёт дней между датами ---
+        // Расчёт количества дней между датами
+        function getDaysBetween(date1, date2) {
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            const diffTime = Math.abs(d2 - d1);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // Получить количество купонных выплат до погашения (включительно с датой погашения, если купон в этот день)
+        function getCouponCount(purchaseDate, nextCouponDate, maturityDate, couponPeriodDays) {
+            const dates = getCouponDates(nextCouponDate, maturityDate, couponPeriodDays);
+            return dates.length;
+        }
+
+        // Список дат выплат купонов от nextCoupon до погашения (включительно)
+        function getCouponDates(nextCouponDate, maturityDate, couponPeriodDays) {
+            const maturity = new Date(maturityDate);
+            const dates = [];
+            let current = new Date(nextCouponDate);
+            while (current <= maturity) {
+                // Сдвигаем дату, если попадает на выходной или праздник
+                const adjustedDate = adjustToBusinessDay(current);
+                dates.push(adjustedDate);
+                
+                current.setDate(current.getDate() + couponPeriodDays);
+            }
+            return dates;
+        }
+
+        // === Учёт выходных и праздников ===
+        // Праздничные дни России (фиксированные + возможные переносы)
+        const RUSSIAN_HOLIDAYS = new Set([
+            // Фиксированные праздники
+            '01-01', '01-02', '01-03', '01-04', '01-05', '01-06', '01-07', // Новогодние каникулы + Рождество
+            '02-23', // День защитника Отечества
+            '03-08', // Международный женский день
+            '05-01', // Праздник Весны и Труда
+            '05-09', // День Победы
+            '06-12', // День России
+            '11-04'  // День народного единства
+        ]);
+
+        // Проверка, является ли дата выходным или праздником
+        function isWeekendOrHoliday(date) {
+            const dayOfWeek = date.getDay();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateKey = `${month}-${day}`;
+
+            // Суббота (6) или Воскресенье (0)
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                return true;
+            }
+
+            // Фиксированный праздник
+            if (RUSSIAN_HOLIDAYS.has(dateKey)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Сдвиг даты на следующий рабочий день, если попадает на выходной/праздник
+        function adjustToBusinessDay(date) {
+            let adjusted = new Date(date);
+            let iterations = 0;
+
+            while (isWeekendOrHoliday(adjusted) && iterations < MAX_HOLIDAY_ITERATIONS) {
+                adjusted.setDate(adjusted.getDate() + 1);
+                iterations++;
+            }
+
+            return adjusted;
+        }
+
+        // === Определение типа облигации ===
+        function getBondType(data, currency = 'RUB') {
+            const faceValue = parseFloat(data.FACEVALUE);
+            const initialNominal = parseFloat(data.INITIALNOMINAL);
+            const couponPercent = parseFloat(data.COUPONPERCENT);
+            const couponValue = parseFloat(data.COUPONVALUE);
+            // Если NOMINAL не указан, используем FACEVALUE (для некоторых облигаций NOMINAL отсутствует в API)
+            const nominal = parseFloat(data.NOMINAL) || faceValue || DEFAULT_NOMINAL;
+            const bondType = data.BONDTYPE || '';
+            const cupType = data.CUPTYPE || '';
+            const bondSubtype = data.BONDSUBTYPE || '';
+            const apiCurrency = data.CURRENCY || currency;
+            const shortName = data.SHORTNAME || '';
+
+            // Проверка на валютную облигацию через BONDTYPE или CURRENCY
+            const isCurrencyBond = bondType.toLowerCase().includes('валют') ||
+                                   bondType.toLowerCase().includes('currency') ||
+                                   apiCurrency === 'USD' || apiCurrency === 'EUR' || apiCurrency === 'CNY' ||
+                                   shortName.toUpperCase().includes('USD') ||
+                                   shortName.toUpperCase().includes('EUR') ||
+                                   shortName.toUpperCase().includes('CNY');
+            
+            // Проверка на амортизацию
+            // Амортизация определяется ТОЛЬКО по явному указанию в BONDTYPE/BONDSUBTYPE
+            // НЕ используем сравнение faceValue и nominal, т.к. NOMINAL может быть не указан в API
+            const isAmortization = bondType.toLowerCase().includes('амортиз') ||
+                                   bondSubtype.toLowerCase().includes('амортиз');
+
+            // Проверка на флоатер
+            const isFloater = bondType.includes('Флоатер') ||
+                              bondType.toLowerCase().includes('флоат') ||
+                              cupType.toLowerCase().includes('флоат') ||
+                              cupType.toLowerCase().includes('float');
+
+            // Формируем описание типа облигации
+            let currencyDesc = '';
+            if (isCurrencyBond) {
+                currencyDesc = `Валюта: ${apiCurrency}`;
+            }
+
+            // Приоритет: Валютная → Амортизация → Флоатер → Фиксированная
+            if (isCurrencyBond) {
+                let bondLabel = 'Валютная облигация';
+                if (isAmortization) bondLabel = 'Валютная облигация с амортизацией';
+                else if (isFloater) bondLabel = 'Валютный флоатер';
+
+                return {
+                    type: 'currency',
+                    label: bondLabel,
+                    description: currencyDesc
+                };
+            }
+
+            if (isAmortization) {
+                const assumedInitial = initialNominal > 0 ? initialNominal : nominal;
+                return {
+                    type: 'amortization',
+                    label: 'Облигация с амортизацией',
+                    description: `Номинал: ${assumedInitial} → ${faceValue || nominal} ₽`
+                };
+            }
+
+            if (isFloater) {
+                return {
+                    type: 'floater',
+                    label: 'Флоатер',
+                    description: 'Плавающая ставка (RUONIA, MOSPRIME и др.)'
+                };
+            }
+
+            // По умолчанию — фиксированный купон
+            return {
+                type: 'fixed',
+                label: 'Облигация с фиксированным купоном',
+                description: ''
+            };
+        }
+
+        // ============================================
+        // SECTION: FINANCIAL CALCULATIONS
+        // ============================================
+        
+        // --- Форматирование дат для графика ---
+        // Формат даты для подписи на графике
+        function formatChartDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        // --- IRR (внутренняя норма доходности) — метод Ньютона-Рафсона ---
+        // Рассчитывает YTM как ставку дисконтирования, при которой NPV = 0
+        function calculateYTM(cashFlows, dates, purchaseDate) {
+            if (!cashFlows || cashFlows.length < 2 || cashFlows.length !== dates.length) {
+                return 0;
+            }
+
+const purchase = new Date(purchaseDate);
+            const lastPaymentDate = new Date(dates[dates.length - 1]);
+            const daysToMaturity = (lastPaymentDate - purchase) / (1000 * 60 * 60 * 24);
+            const yearsToMaturity = daysToMaturity / DAYS_IN_YEAR;
+
+            const invested = Math.abs(cashFlows[0]);
+            const totalReturn = cashFlows.slice(1).reduce((a, b) => a + b, 0);
+            
+            // Для коротких сроков (< 180 дней) - логарифмическая формула
+            if (yearsToMaturity > 0 && yearsToMaturity < 0.5 && invested > 0 && totalReturn > 0) {
+                const logYTM = Math.log(totalReturn / invested) / yearsToMaturity;
+                return (Math.exp(logYTM) - 1) * 100;
+            }
+            
+            // Функция NPV
+            function npv(rate) {
+                let sum = 0;
+                for (let i = 0; i < cashFlows.length; i++) {
+                    const daysFromStart = (new Date(dates[i]) - purchase) / (1000 * 60 * 60 * 24);
+                    const yearsFromStart = daysFromStart / DAYS_IN_YEAR;
+                    sum += cashFlows[i] / Math.pow(1 + rate, yearsFromStart);
+                }
+                return sum;
+            }
+
+            // Функция производной NPV для метода Ньютона
+            function npvDerivative(rate) {
+                let sum = 0;
+                for (let i = 0; i < cashFlows.length; i++) {
+                    const daysFromStart = (new Date(dates[i]) - purchase) / (1000 * 60 * 60 * 24);
+                    const yearsFromStart = daysFromStart / DAYS_IN_YEAR;
+                    sum += -yearsFromStart * cashFlows[i] / Math.pow(1 + rate, yearsFromStart + 1);
+                }
+                return sum;
+            }
+
+            // Метод Ньютона-Рафсона для нахождения IRR
+            let rate = 0.1; // Начальное приближение 10%
+
+            for (let i = 0; i < MAX_ITERATIONS; i++) {
+                const npvValue = npv(rate);
+                const derivative = npvDerivative(rate);
+
+                if (Math.abs(derivative) < 1e-12) {
+                    // Производная слишком мала, пробуем изменить ставку
+                    rate += 0.01;
+                    continue;
+                }
+
+                const newRate = rate - npvValue / derivative;
+
+                if (Math.abs(newRate - rate) < TOLERANCE) {
+                    return newRate * 100; // Возвращаем в процентах
+                }
+
+                // Ограничиваем ставку разумными пределами
+                rate = Math.max(-0.99, Math.min(10, newRate));
+            }
+
+            // Если не сошлось, возвращаем последнее приближение
+            return rate * 100;
+        }
+
+        // === Функция определения валюты облигации ===
+        function detectCurrency(data) {
+            const CURRENCY_MAP = {
+                'USD': 'USD', 'EUR': 'EUR', 'CNY': 'CNY',
+                'RUB': 'RUB', 'CHF': 'CHF', 'GBP': 'GBP'
+            };
+
+            // Приоритет 1: FACEUNIT из API (самый надежный источник)
+            const faceUnit = (data.FACEUNIT || '').trim();
+            if (faceUnit) {
+                const fu = faceUnit.toUpperCase();
+                if (fu.includes('USD') || fu.includes('ДОЛЛ')) return 'USD';
+                if (fu.includes('EUR') || fu.includes('ЕВРО')) return 'EUR';
+                if (fu.includes('CNY') || fu.includes('ЮАН')) return 'CNY';
+                if (fu.includes('RUB') || fu.includes('РУБ')) return 'RUB';
+                if (fu.includes('CHF') || fu.includes('ФР')) return 'CHF';
+                if (fu.includes('GBP') || fu.includes('ФСТ')) return 'GBP';
+            }
+
+            // Приоритет 2: NOMINALCURRENCY из API
+            const nominalCurrency = data.NOMINALCURRENCY || '';
+            if (nominalCurrency && CURRENCY_MAP[nominalCurrency]) {
+                return CURRENCY_MAP[nominalCurrency];
+            }
+
+            // Приоритет 3: BONDTYPE + эвристика по купону
+            const bondTypeValue = (data.BONDTYPE || '').toLowerCase();
+            if (bondTypeValue.includes('валют')) {
+                const couponPercent = parseFloat(data.COUPONPERCENT) || 0;
+                const faceValue = parseFloat(data.FACEVALUE) || 0;
+
+                if (couponPercent >= 6 && couponPercent <= 9 && faceValue >= 1000 && faceValue <= 10000) return 'CNY';
+                if (couponPercent >= 5 && couponPercent <= 10) return 'USD';
+                if (couponPercent >= 3 && couponPercent <= 7) return 'EUR';
+                return 'USD';
+            }
+
+            return 'RUB';
+        }
+
+        // ============================================
+        // SECTION: MODULAR CALCULATION FUNCTIONS
+        // ============================================
+        
+        function calculatePrices(nominal, pricePercent, nkd) {
+            return {
+                cleanPrice: nominal * (pricePercent / 100),
+                dirtyPrice: nominal * (pricePercent / 100) + nkd,
+                overpaymentPerBond: (nominal * (pricePercent / 100) + nkd) - nominal
+            };
+        }
+        
+        function calculateBondCount(investment, dirtyPrice, exchangeRate) {
+            const investmentInCurrency = investment / exchangeRate;
+            return {
+                bondCount: Math.floor(investmentInCurrency / dirtyPrice),
+                investmentInCurrency
+            };
+        }
+        
+        function calculateCoupons(nominal, couponRate, couponPeriodDays, taxRate, couponValueFromApi, isFloater) {
+            let couponPerPeriod;
+            if (!isNaN(couponValueFromApi) && couponValueFromApi > 0) {
+                couponPerPeriod = couponValueFromApi;
+            } else if (!isNaN(couponRate) && couponRate > 0) {
+                couponPerPeriod = nominal * (couponRate / 100) * (couponPeriodDays / DAYS_IN_YEAR);
+            } else if (isFloater) {
+                couponPerPeriod = 0;
+            } else {
+                couponPerPeriod = 0;
+            }
+            
+            const couponFrequencyPerYear = Math.round(DAYS_IN_YEAR / couponPeriodDays);
+            
+            return {
+                couponPerPeriod,
+                netCouponPerPeriod: couponPerPeriod * (1 - taxRate),
+                annualCoupon: couponPerPeriod * couponFrequencyPerYear,
+                netAnnualCoupon: couponPerPeriod * couponFrequencyPerYear * (1 - taxRate),
+                couponFrequencyPerYear
+            };
+        }
+        
+        function calculateTax(taxableCoupon, taxRate) {
+            return taxableCoupon * taxRate;
+        }
+        
+        function calculateAmortization(bondData, actualCouponCount, nominal) {
+            if (!bondData) return { isAmortization: false, schedule: [] };
+            
+            const bondTypeCheck = bondData.BONDTYPE || '';
+            const bondSubtypeCheck = bondData.BONDSUBTYPE || '';
+            const isAmortization = bondTypeCheck.toLowerCase().includes('амортиз') || 
+                                  bondSubtypeCheck.toLowerCase().includes('амортиз');
+            
+            if (!isAmortization) return { isAmortization: false, schedule: [] };
+            
+            const faceValue = parseFloat(bondData.FACEVALUE) || 0;
+            if (!isFinite(faceValue) || faceValue <= 0 || actualCouponCount <= 0) {
+                return { isAmortization: false, schedule: [] };
+            }
+            
+            const initialNominal = parseFloat(bondData.INITIALNOMINAL) || nominal;
+            const amortizationPerCoupon = (initialNominal - faceValue) / actualCouponCount;
+            const schedule = [];
+            
+            for (let i = 0; i < actualCouponCount; i++) {
+                schedule.push({
+                    amortization: amortizationPerCoupon,
+                    remainingNominal: initialNominal - (amortizationPerCoupon * (i + 1))
+                });
+            }
+            
+            return { isAmortization: true, schedule, faceValue, initialNominal };
+        }
+        
+        function calculateYTMFromCashFlows(grossCashFlows, grossDates, purchaseDate) {
+            return calculateYTM(grossCashFlows, grossDates, purchaseDate);
+        }
+        
+        function calculateCurrentYield(annualCoupon, cleanPrice) {
+            if (cleanPrice <= 0) return 0;
+            return (annualCoupon / cleanPrice) * 100;
+        }
+        
+        function calculateEffectiveYield(ytm, couponFrequencyPerYear) {
+            if (couponFrequencyPerYear <= 0) return ytm;
+            return (Math.pow(1 + ytm / 100 / couponFrequencyPerYear, couponFrequencyPerYear) - 1) * 100;
+        }
+        
+        function calculatePaybackMonths(totalOverpayment, netAnnualCoupon, bondCount, exchangeRate) {
+            if (netAnnualCoupon <= 0 || bondCount <= 0) return Infinity;
+            const monthlyNetCouponIncomeRUB = (netAnnualCoupon * bondCount * exchangeRate) / 12;
+            const totalOverpaymentRUB = totalOverpayment * exchangeRate;
+            return monthlyNetCouponIncomeRUB > 0 ? totalOverpaymentRUB / monthlyNetCouponIncomeRUB : Infinity;
+        }
+        
+        function calculateFinalAmount(redemptionAmount, totalNetCoupons, totalNkdAtMaturity) {
+            return redemptionAmount + totalNetCoupons + totalNkdAtMaturity;
+        }
+        
+        function calculateNetProfit(finalAmount, totalCostWithCommission) {
+            return finalAmount - totalCostWithCommission;
+        }
+
+        // ============================================
+        // SECTION: MAIN CALCULATION
+        // ============================================
+        
+        // Основная функция расчёта
+        function calculate() {
+            try {
+                // Получаем значения
+                const investment = parseFloat(investmentInput.value);
+
+                // Если сумма инвестирования не задана - не считаем (первый запуск)
+                if (!investment || investment <= 0) {
+                    return;
+                }
+                
+                // === ВАЛЮТА И КУРС ===
+                const bondCurrency = currencySelect.value || DEFAULT_CURRENCY;
+                const exchangeRate = parseFloat(exchangeRateInput.value) || 1;
+                const currencySymbol = CURRENCIES[bondCurrency]?.symbol || '₽';
+                
+                const nominal = parseFloat(nominalInput.value);
+                const pricePercent = parseFloat(priceInput.value);
+                const nkd = parseFloat(nkdInput.value);
+                const couponRate = parseFloat(couponRateInput.value);
+                const couponFrequencyPerYear = parseInt(couponPeriodInput.value);
+                const couponPeriodDays = Math.round(DAYS_IN_YEAR / couponFrequencyPerYear);
+                const taxRate = parseFloat(taxRateInput.value) / 100;
+                const commissionRate = parseFloat(commissionInput.value) / 100;
+                const purchaseDate = purchaseDateInput.value;
+                const maturityDate = maturityInput.value;
+                const nextCouponDate = nextCouponInput.value;
+                const couponValueFromApi = parseFloat(couponValueInput.value);
+
+                // === Расширенная валидация входных данных ===
+                
+                // Проверка на NaN для обязательных полей
+                // couponRate может быть 0 для флоатеров
+                if ([investment, nominal, pricePercent, nkd, couponFrequencyPerYear].some(isNaN)) {
+                    throw new Error('Некорректные входные данные');
+                }
+
+                // Валидация пройдена
+                
+                // Проверка на отрицательные значения
+                if (investment <= 0) throw new Error('Сумма инвестирования должна быть больше 0');
+                if (nominal <= 0) throw new Error('Номинал должен быть больше 0');
+                if (pricePercent <= 0) throw new Error('Цена должна быть больше 0');
+                if (nkd < 0) throw new Error('НКД не может быть отрицательным');
+                if (couponFrequencyPerYear < 1 || couponFrequencyPerYear > 12) {
+                    throw new Error('Периодичность выплат: от 1 до 12 раз в год');
+                }
+                if (taxRate < 0 || taxRate > 1) throw new Error('Налоговая ставка: от 0% до 100%');
+
+                // Проверка дат
+                const purchase = new Date(purchaseDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (isNaN(purchase.getTime())) throw new Error('Некорректная дата покупки');
+                
+                // Проверка на бессрочную облигацию
+                const isPerpetual = !maturityDate || maturityDate === '0000-00-00';
+                let maturity;
+                
+                if (isPerpetual) {
+                    // Для бессрочных облигаций используем дату на 30 лет вперёд для расчётов
+                    maturity = new Date(purchase);
+                    maturity.setFullYear(maturity.getFullYear() + 30);
+                } else {
+                    maturity = new Date(maturityDate);
+                    if (isNaN(maturity.getTime())) throw new Error('Некорректная дата погашения');
+                    if (maturity <= purchase) throw new Error('Дата погашения должна быть после даты покупки');
+                }
+
+                // Проверка даты следующего купона (если указана)
+                if (nextCouponDate) {
+                    const nextCoupon = new Date(nextCouponDate);
+                    if (isNaN(nextCoupon.getTime())) throw new Error('Некорректная дата следующего купона');
+                    if (nextCoupon < purchase) {
+                        throw new Error('Дата следующего купона должна быть после даты покупки');
+                    }
+                    if (!isPerpetual && nextCoupon > maturity) {
+                        throw new Error('Дата следующего купона должна быть до погашения');
+                    }
+                }
+
+                // === Конец валидации ===
+
+                // 1. Основные цены (в валюте облигации)
+                const cleanPrice = nominal * (pricePercent / 100);
+                const dirtyPrice = cleanPrice + nkd;
+
+                // 2. Конвертируем сумму инвестирования в валюту облигации для расчёта количества
+                const investmentInCurrency = investment / exchangeRate;
+                
+                // 3. Количество облигаций — строго floor (только полные облигации)
+                const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+                if (bondCount === 0) {
+                    const minInvestment = dirtyPrice * exchangeRate;
+                    const minInvestmentFormatted = minInvestment >= 1000000 
+                        ? `${(minInvestment / 1000000).toFixed(1)} млн ₽` 
+                        : `${Math.round(minInvestment)} ₽`;
+                    throw new Error(`Недостаточно средств! Минимум: ${minInvestmentFormatted} (${Math.ceil(dirtyPrice)} ${currencySymbol})`);
+                }
+                const totalCost = bondCount * dirtyPrice; // В валюте облигации
+                const commission = totalCost * commissionRate; // Комиссия брокера (в валюте)
+                const totalCostWithCommission = totalCost + commission; // Полная стоимость с комиссией (в валюте)
+                const remainderInCurrency = investmentInCurrency - totalCostWithCommission; // Остаток (в валюте)
+                
+                // Конвертируем обратно в рубли для отображения
+                const totalCostRUB = totalCost * exchangeRate;
+                const commissionRUB = commission * exchangeRate;
+                const totalCostWithCommissionRUB = totalCostWithCommission * exchangeRate;
+                const remainderRUB = remainderInCurrency * exchangeRate;
+
+                // 3. Купонные выплаты
+                let couponPerPeriod;
+                let isFloater = false;
+                let isAmortization = false;
+                let faceValue = 0; // Объявляем заранее
+                let amortizationSchedule = []; // График погашения номинала
+
+                // Проверяем, является ли облигация флоатером или амортизируемой
+                if (bondDataFromApi) {
+                    const bondTypeCheck = bondDataFromApi.BONDTYPE || '';
+                    const cupTypeCheck = bondDataFromApi.CUPTYPE || '';
+                    const bondSubtypeCheck = bondDataFromApi.BONDSUBTYPE || '';
+                    faceValue = parseFloat(bondDataFromApi.FACEVALUE) || 0;
+
+                    isFloater = bondTypeCheck.includes('Флоатер') ||
+                               bondTypeCheck.toLowerCase().includes('флоат') ||
+                               cupTypeCheck.toLowerCase().includes('флоат') ||
+                               cupTypeCheck.toLowerCase().includes('float');
+
+                    isAmortization = bondTypeCheck.toLowerCase().includes('амортиз') ||
+                                    bondSubtypeCheck.toLowerCase().includes('амортиз');
+                }
+
+                if (!isNaN(couponValueFromApi) && couponValueFromApi > 0) {
+                    // Используем точную сумму купона из API (пос��едни���������������� известный купон)
+                    couponPerPeriod = couponValueFromApi;
+                } else if (!isNaN(couponRate) && couponRate > 0) {
+                    // Расчёт по формуле (для фиксированных или флоатеров с известной ставкой)
+                    const annualCoupon = nominal * (couponRate / 100);
+                    couponPerPeriod = annualCoupon * (couponPeriodDays / DAYS_IN_YEAR);
+                } else if (isFloater) {
+                    // Для флоатеров без данных — используем 0 (плавающая ставка)
+                    couponPerPeriod = 0;
+                } else {
+                    couponPerPeriod = 0;
+                }
+                const netCouponPerPeriod = couponPerPeriod * (1 - taxRate);
+                const annualCoupon = couponPerPeriod * couponFrequencyPerYear;
+                const netAnnualCoupon = annualCoupon * (1 - taxRate);
+
+                // 4. Переплата
+                const overpaymentPerBond = dirtyPrice - nominal;
+                const totalOverpayment = overpaymentPerBond * bondCount;
+
+                // 5. Временные параметры
+                const daysToMaturity = getDaysBetween(purchaseDate, maturityDate);
+                const yearsToMaturity = daysToMaturity / DAYS_IN_YEAR;
+
+                // 6. Количество купонных выплат до погашения
+                const couponCount = getCouponCount(purchaseDate, nextCouponDate, maturityDate, couponPeriodDays);
+
+                // 8. Доходности — настоящий IRR по денежным потокам
+                // Формируем денежные потоки для YTM (до налога)
+                const couponDates = getCouponDates(nextCouponDate, maturityDate, couponPeriodDays);
+                // Для расчётов используем фактическое количество дат купонов
+                const actualCouponCount = couponDates.length;
+                
+                // Проверка на пустой список купонов
+                if (actualCouponCount === 0) {
+                    console.error('Нет дат купонов! nextCoupon:', nextCouponDate, 'maturity:', maturityDate, 'period:', couponPeriodDays);
+                }
+
+// Строим график амортизации после получения couponDates
+                // Для амортизируемых облигаций: номинал уменьшается постепенно
+                if (isAmortization && isFinite(faceValue) && faceValue > 0 && actualCouponCount > 0) {
+                    const initialNominal = parseFloat(bondDataFromApi.INITIALNOMINAL) || nominal;
+                    const totalAmortization = initialNominal - faceValue;
+                    const amortizationPerCoupon = totalAmortization / actualCouponCount;
+                    for (let i = 0; i < actualCouponCount; i++) {
+                        const remainingAtThisPayment = initialNominal - amortizationPerCoupon * (i + 1);
+                        amortizationSchedule.push({
+                            date: couponDates[i],
+                            amortization: amortizationPerCoupon,
+                            remainingNominal: Math.max(0, remainingAtThisPayment)
+                        });
+                    }
+                }
+                
+// Поток до налога: покупка + все купоны + погашение
+                const grossCashFlows = [-dirtyPrice * bondCount];
+                const grossDates = [purchaseDate];
+                
+                // Добавляем все купоны
+                for (let i = 0; i < couponDates.length; i++) {
+                    grossCashFlows.push(couponPerPeriod * bondCount);
+                    grossDates.push(couponDates[i]);
+                }
+                // Добавляем номинал в последний платёж
+                grossCashFlows[grossCashFlows.length - 1] += nominal * bondCount;
+                
+                const ytm = calculateYTM(grossCashFlows, grossDates, purchaseDate);
+
+                // Чистая доходность (после налога): покупка + все купоны + погашение
+                const netCouponPerBond = couponPerPeriod * (1 - taxRate);
+                const netCashFlows = [-dirtyPrice * bondCount];
+                const netDates = [purchaseDate];
+                
+                for (let i = 0; i < couponDates.length; i++) {
+                    netCashFlows.push(netCouponPerBond * bondCount);
+                    netDates.push(couponDates[i]);
+                }
+                netCashFlows[netCashFlows.length - 1] += nominal * bondCount;
+                
+                const netYtm = calculateYTM(netCashFlows, netDates, purchaseDate);
+                const totalTaxPaidAll = couponPerPeriod * taxRate * bondCount * actualCouponCount;
+                const totalGrossCoupons = couponPerPeriod * actualCouponCount * bondCount;
+                const totalNetCoupons = netCouponPerBond * actualCouponCount * bondCount;
+                
+                // Текущая доходность (простая формула)
+                const currentYield = (annualCoupon / cleanPrice) * 100;
+
+                // Дата последнего купона перед погашением
+                const lastCouponDate = couponDates.length > 0
+                    ? couponDates[couponDates.length - 1].toISOString().split('T')[0]
+                    : purchaseDate;
+                
+                // НКД при погашении = купон × (дней от послед��его купона до погашения / купонный период)
+                // ����сли погашение в дату купона, НКД = 0
+                const daysFromLastCouponToMaturity = getDaysBetween(lastCouponDate, maturityDate);
+                const nkdAtMaturity = couponPerPeriod * Math.min(1, daysFromLastCouponToMaturity / couponPeriodDays);
+                const totalNkdAtMaturity = nkdAtMaturity * bondCount;
+
+                // 11. Итоговые сум����������ы с учётом комиссии и НКД при погашении
+                // Для амортизируемых облигаций сумма погашения = остаточный номинал × количество
+                const redemptionAmount = nominal * bondCount;
+                    
+                const finalAmount = redemptionAmount + totalNetCoupons + totalNkdAtMaturity;
+                const netProfit = finalAmount - totalCostWithCommission;
+                const totalCommissionPaid = commission;
+
+                // 12. Чистый годовой купон (всего) — сумма чистых купонов за год по всем облигациям
+                const netAnnualTotal = netAnnualCoupon * bondCount;
+
+                // 13. Срок окупаемости переплаты
+                // Для валютных облигаций расчет в рублях (инвестор потратил рубли)
+                const monthlyNetCouponIncomeRUB = (netAnnualCoupon * bondCount * exchangeRate) / 12;
+                const totalOverpaymentRUB = totalOverpayment * exchangeRate;
+                let paybackMonths = monthlyNetCouponIncomeRUB > 0 ? totalOverpaymentRUB / monthlyNetCouponIncomeRUB : Infinity;
+                
+                // Для флоатеров без данных о купоне - нельзя рассчитать окупаемость
+                const isFloaterNoData = isFloater && (!couponValueFromApi || couponValueFromApi === 0) && (!couponRate || couponRate === 0);
+
+                // 13. Данные для графика: даты и накопленный купон, линия переплаты
+                // couponDates уже получен выше в пункте 8
+                const purchaseDateObj = new Date(purchaseDate);
+                const chartLabels = [formatChartDate(purchaseDateObj)].concat(couponDates.map(d => formatChartDate(d)));
+                const netPerPayment = netCouponPerPeriod * bondCount;
+                const chartCumulative = [0];
+                for (let i = 1; i <= couponCount; i++) chartCumulative.push(i * netPerPayment);
+                const chartOverpayment = chartLabels.map(() => totalOverpayment);
+
+                updatePaymentsChart(chartLabels, chartCumulative, chartOverpayment);
+                updateAmortizationChart(amortizationSchedule);
+
+                // Обновление результатов
+                // Цены в валюте облигации
+                cleanPriceElement.textContent = `${formatNumber(cleanPrice)} ${currencySymbol}`;
+                dirtyPriceElement.textContent = `${formatNumber(dirtyPrice)} ${currencySymbol}`;
+                bondCountElement.textContent = `${bondCount} шт.`;
+                
+                // Купоны: для валютных облигаций — в валюте, для рублёвых — в рублях
+                const isCurrencyBond = bondCurrency !== 'RUB';
+                const couponDisplayCurrency = isCurrencyBond ? currencySymbol : '₽';
+                const couponRateForDisplay = isCurrencyBond ? 1 : exchangeRate;
+                
+                // Стоимость и остаток: для валютных — в валюте, для рублёвых — только рубли
+                totalCostElement.textContent = `${formatNumber(totalCost * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                remainderElement.textContent = `${formatNumber(remainderInCurrency * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                
+                periodCouponElement.textContent = `${formatNumber(couponPerPeriod * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                netCouponElement.textContent = `${formatNumber(netCouponPerPeriod * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                grossTotalCouponElement.textContent = `${formatNumber(couponPerPeriod * bondCount * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                totalNetCouponElement.textContent = `${formatNumber(netCouponPerPeriod * bondCount * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                annualCouponElement.textContent = `${formatNumber(annualCoupon * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                netAnnualTotalElement.textContent = `${formatNumber(netAnnualTotal * couponRateForDisplay)} ${couponDisplayCurrency}`;
+
+                // Определяем, является ли облигация с премией или с дисконтом
+                const isPremiumBond = overpaymentPerBond > 0; // Облигация с премией
+                const isDiscountBond = overpaymentPerBond < 0; // Облигация с дисконтом
+
+// Обновляем отображение переплаты или дисконта
+                const overpaymentCard = document.getElementById('overpayment-per-bond').closest('.result-card');
+                const totalOverpaymentCard = document.getElementById('total-overpayment').closest('.result-card');
+                const overpaymentLabel = overpaymentCard.querySelector('.result-label');
+                const totalOverpaymentLabel = totalOverpaymentCard.querySelector('.result-label');
+                
+                if (isPremiumBond) {
+                    // Облигация с премией - показываем переплату
+                    overpaymentPerBondElement.textContent = `${formatNumber(overpaymentPerBond)} ${currencySymbol}`;
+                    totalOverpaymentElement.textContent = `${formatNumber(totalOverpayment * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                    overpaymentLabel.textContent = 'Переплата за облигацию';
+                    totalOverpaymentLabel.textContent = 'Общая переплата';
+                    overpaymentCard.querySelector('.result-details').textContent = 'Грязная цена − номинал';
+                    totalOverpaymentCard.querySelector('.result-details').textContent = 'Включая НКД';
+                    overpaymentCard.style.display = 'block';
+                    totalOverpaymentCard.style.display = 'block';
+                } else if (isDiscountBond) {
+                    // Облигация с дисконтом - показываем дисконт
+                    overpaymentPerBondElement.textContent = `${formatNumber(Math.abs(overpaymentPerBond))} ${currencySymbol}`;
+                    totalOverpaymentElement.textContent = `${formatNumber(Math.abs(totalOverpayment) * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                    overpaymentLabel.textContent = 'Дисконт за облигацию';
+                    totalOverpaymentLabel.textContent = 'Общий дисконт';
+                    overpaymentCard.querySelector('.result-details').textContent = 'Доход при погашении';
+                    totalOverpaymentCard.querySelector('.result-details').textContent = 'Доход при погашении';
+                    overpaymentCard.style.display = 'block';
+                    totalOverpaymentCard.style.display = 'block';
+                } else {
+                    // Без премии/дисконта (цена равна номиналу)
+                    overpaymentPerBondElement.textContent = `${formatNumber(overpaymentPerBond)} ${currencySymbol}`;
+                    totalOverpaymentElement.textContent = `${formatNumber(totalOverpayment * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                    overpaymentLabel.textContent = 'Переплата за облигацию';
+                    totalOverpaymentLabel.textContent = 'Общая переплата';
+                    overpaymentCard.querySelector('.result-details').textContent = 'Грязкая цена − номинал';
+                    totalOverpaymentCard.querySelector('.result-details').textContent = 'Включая НКД';
+                    overpaymentCard.style.display = 'block';
+                    totalOverpaymentCard.style.display = 'block';
+                }
+
+                currentYieldElement.textContent = `${currentYield.toFixed(2)}%`;
+                ytmElement.textContent = `${ytm.toFixed(2)}%`;
+                
+                // Эффективная доходность (с учётом реинвестирования купонов)
+                // Для очень высокого YTM (> 100%) формула (1+YTM/n)^n overflow-ит
+                // Ограничиваем YTM для расчёта эффективной доходности
+                const couponsPerYear = couponFrequencyPerYear;
+                const ytmForCalc = Math.min(ytm, 100); // Cap at 100% for formula stability
+                const effectiveYield = couponsPerYear > 0 
+                    ? (Math.pow(1 + ytmForCalc / 100 / couponsPerYear, couponsPerYear) - 1) * 100 
+                    : ytm;
+                const effectiveYieldElement = document.getElementById('effective-yield');
+                if (effectiveYieldElement) {
+                    effectiveYieldElement.textContent = `${effectiveYield.toFixed(2)}%`;
+                }
+                
+                netYieldElement.textContent = `${netYtm.toFixed(2)}%`;
+                
+                // Сравнение с депозитом
+                const bondNameEl = document.getElementById('bond-name-result');
+                const bondNameValue = bondNameEl ? bondNameEl.textContent : '';
+                const depositRate = parseFloat(document.getElementById('deposit-rate').value) || 18;
+                const depositComparisonCard = document.getElementById('deposit-comparison-card');
+                const floaterSimulatorCard = document.getElementById('floater-simulator-card');
+                const depositComparisonResult = document.getElementById('deposit-comparison-result');
+                const depositComparisonDetails = document.getElementById('deposit-comparison-details');
+                
+                if (bondNameValue && bondNameValue !== '—' && bondNameValue !== 'Название не указано') {
+                    const diff = netYtm - depositRate;
+                    if (diff > 0) {
+                        depositComparisonResult.textContent = `+${diff.toFixed(2)}%`;
+                        depositComparisonResult.style.color = '#16a34a';
+                        depositComparisonDetails.textContent = `Выше депозита на ${diff.toFixed(2)}%`;
+                    } else if (diff < 0) {
+                        depositComparisonResult.textContent = `${diff.toFixed(2)}%`;
+                        depositComparisonResult.style.color = '#dc2626';
+                        depositComparisonDetails.textContent = `Ниже депозита на ${Math.abs(diff).toFixed(2)}%`;
+                    } else {
+                        depositComparisonResult.textContent = '0%';
+                        depositComparisonResult.style.color = '#262626';
+                        depositComparisonDetails.textContent = 'Равно депозиту';
+                    }
+                    depositComparisonCard.style.display = 'block';
+                }
+
+                // Симулятор флоатера — только для плавающих облигаций
+                floaterSimulatorCard.style.display = isFloater ? 'block' : 'none';
+
+                // Итоговые суммы: для валютных — в валюте + рубли, для рублёвых — только рубли
+                totalCouponToMaturityElement.textContent = `${formatNumber(totalNetCoupons * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                finalAmountElement.textContent = `${formatNumber(finalAmount * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                netProfitElement.textContent = `${formatNumber(netProfit * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                commissionAmountElement.textContent = `${formatNumber(commission * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                totalTaxPaidElement.textContent = `${formatNumber(totalTaxPaidAll * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                nkdAtMaturityElement.textContent = `${formatNumber(totalNkdAtMaturity * couponRateForDisplay)} ${couponDisplayCurrency}`;
+                couponCountElement.textContent = couponCount;
+
+                // === Налоговый вычет ИИС ===
+                const accountType = document.getElementById('account-type')?.value || 'standard';
+                const iisTaxCard = document.getElementById('iis-tax-card');
+                const iisTaxBenefitEl = document.getElementById('iis-tax-benefit');
+                const iisTaxDetailsEl = document.getElementById('iis-tax-details');
+                const investmentAmount = parseFloat(investmentInput.value) || 0;
+
+                if (accountType === 'standard') {
+                    iisTaxCard.style.display = 'none';
+                } else if (accountType === 'iis-a') {
+                    iisTaxCard.style.display = 'block';
+                    const maxContribution = 400000;
+                    const actualContribution = Math.min(investmentAmount, maxContribution);
+                    const taxRatePercent = parseFloat(taxRateInput.value) / 100;
+                    const taxBenefit = actualContribution * taxRatePercent;
+                    iisTaxBenefitEl.textContent = `+${formatNumber(taxBenefit)} ₽`;
+                    iisTaxDetailsEl.textContent = `${formatNumber(actualContribution)} ₽ × ${(taxRatePercent * 100).toFixed(0)}% = возврат НДФЛ`;
+                } else if (accountType === 'iis-b') {
+                    iisTaxCard.style.display = 'block';
+                    const taxSaved = totalTaxPaidAll * couponRateForDisplay;
+                    iisTaxBenefitEl.textContent = `0 ₽ (освобождение)`;
+                    iisTaxDetailsEl.textContent = `Купонный доход не облагается налогом. Экономия: ${formatNumber(taxSaved)} ₽`;
+                }
+                
+                // Отображение дней до погашения
+                if (isPerpetual) {
+                    daysToMaturityElement.textContent = '∞';
+                    const detailsEl = document.getElementById('days-to-maturity-details');
+                    if (detailsEl) detailsEl.textContent = 'Бессрочная облигация';
+                } else {
+                    daysToMaturityElement.textContent = daysToMaturity;
+                }
+
+                // Форматирование срока окупаемости
+                if (isFloaterNoData) {
+                    paybackTimeElement.textContent = `—`;
+                    const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                    if (detailsElement) {
+                        detailsElement.textContent = `Флоатер: купон зависит от ставки (RUONIA, MOSPRIME)`;
+                    }
+                } else if (isFinite(paybackMonths)) {
+                    if (paybackMonths > 0 && paybackMonths < 120) {
+                        const years = Math.floor(paybackMonths / 12);
+                        const months = Math.floor(paybackMonths % 12);
+                        const days = Math.round((paybackMonths % 1) * 30);
+
+                        let paybackText = '';
+                        if (years > 0) {
+                            paybackText += `${years} ${years === 1 ? 'год' : years < 5 ? 'года' : 'лет'} `;
+                        }
+                        if (months > 0) {
+                            paybackText += `${months} ${months === 1 ? 'месяц' : months < 5 ? 'месяца' : 'месяцев'} `;
+                        }
+                        if (days > 0 && years === 0) {
+                            paybackText += `${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`;
+                        }
+
+                        paybackTimeElement.textContent = `${paybackMonths.toFixed(2)} мес.`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Примерно ${paybackText.trim() || 'менее месяца'}`;
+                        }
+} else if (paybackMonths < 0) {
+                        // Для облигаций с дисконтом - показываем доход от дисконта, а не отрицательный срок
+                        const discountAmount = Math.abs(totalOverpaymentRUB); // Берем абсолютное значение
+                        paybackTimeElement.textContent = formatNumber(discountAmount) + ' ₽';
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Доход при погашении (дисконт)`;
+                        }
+                    } else if (paybackMonths === 0) {
+                        paybackTimeElement.textContent = `0.00 мес.`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Нет переплаты или дисконта`;
+                        }
+                    } else {
+                        paybackTimeElement.textContent = `Не окупится`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Слишком большая переплата или длительный срок окупаемости`;
+                        }
+                    }
+                } else {
+                    if (isFloaterNoData) {
+                        paybackTimeElement.textContent = `—`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Флоатер: купон зависит от ставки (RUONIA, MOSPRIME и др.)`;
+                        }
+                    } else if (monthlyNetCouponIncomeRUB <= 0) {
+                        paybackTimeElement.textContent = `Не окупится`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Низкий купон или отсутствие купонного дохода`;
+                        }
+                    } else {
+                        paybackTimeElement.textContent = `Не окупится`;
+                        const detailsElement = paybackTimeElement?.parentElement?.querySelector('.result-details');
+                        if (detailsElement) {
+                            detailsElement.textContent = `Слишком большая переплата или длительный срок окупаемости`;
+                        }
+                    }
+                }
+
+            } catch (error) {
+                const resetValue = (el) => {
+                    if (el.id === 'bond-count') el.textContent = '—';
+                    else if (el.id === 'coupon-count' || el.id === 'days-to-maturity') el.textContent = '—';
+                    else if (el.id?.includes('yield')) el.textContent = '—';
+                    else el.textContent = '—';
+                };
+
+                [cleanPriceElement, dirtyPriceElement, bondCountElement, totalCostElement,
+                 remainderElement, periodCouponElement, netCouponElement, grossTotalCouponElement,
+                 totalNetCouponElement, annualCouponElement, netAnnualTotalElement, overpaymentPerBondElement,
+                 totalOverpaymentElement, currentYieldElement, ytmElement, netYieldElement,
+                 totalCouponToMaturityElement, finalAmountElement, netProfitElement,
+                 commissionAmountElement, totalTaxPaidElement, nkdAtMaturityElement,
+                 couponCountElement, daysToMaturityElement].forEach(resetValue);
+
+                paybackTimeElement.textContent = '—';
+                const errorMessage = error.message || 'Проверьте входные данные';
+                paybackTimeElement.parentElement.querySelector('.result-details').textContent = errorMessage;
+                highlightErrorFields(errorMessage);
+
+                if (paybacksChart) {
+                    paybacksChart.data.datasets[0].data = [];
+                    paybacksChart.data.datasets[1].data = [];
+                    paybacksChart.data.labels = [];
+                    paybacksChart.update('none');
+                }
+                if (amortChartInstance) { amortChartInstance.destroy(); amortChartInstance = null; }
+            }
+        }
+
+        // ============================================
+        // SECTION: CHART
+        // ============================================
+        
+        function updatePaymentsChart(labels, cumulativeNet, overpaymentLine) {
+            if (typeof Chart === 'undefined' || !chartCanvas) return;
+
+            if (!labels || labels.length === 0) {
+                chartCanvas.style.height = '200px';
+                if (paybacksChart) paybacksChart.destroy();
+                return;
+            }
+
+            chartCanvas.style.height = '320px';
+
+            if (paybacksChart) paybacksChart.destroy();
+
+            try {
+                const ctx = chartCanvas.getContext('2d');
+                paybacksChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Накопленный чистый купон, ₽',
+                            data: cumulativeNet,
+                            borderColor: '#F3A80A',
+                            backgroundColor: 'rgba(243, 168, 10, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0,
+                            stepped: 'after',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Переплата (уровень окупаемости), ₽',
+                            data: overpaymentLine,
+                            borderColor: '#64748b',
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const v = context.parsed.y;
+                                    return context.dataset.label + ': ' + (v % 1 === 0 ? v.toLocaleString('ru-RU') : v.toFixed(2)) + ' ₽';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Дата' },
+                            ticks: { maxRotation: 45, minRotation: 30, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            title: { display: true, text: 'Сумма, ₽' },
+                            beginAtZero: true,
+                            grace: '5%',
+                            ticks: {
+                                callback: function(value) {
+                                    return value >= 1000 ? (value / 1000) + ' тыс.' : value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            } catch (chartError) {
+            }
+        }
+
+        function updateAmortizationChart(schedule) {
+            const canvas = document.getElementById('amortization-chart');
+            if (!canvas) return;
+
+            const card = document.getElementById('amortization-chart-card');
+            if (!schedule || schedule.length === 0) {
+                if (card) card.style.display = 'none';
+                if (amortChartInstance) { amortChartInstance.destroy(); amortChartInstance = null; }
+                return;
+            }
+
+            if (card) card.style.display = 'block';
+            canvas.style.height = '200px';
+
+            if (amortChartInstance) amortChartInstance.destroy();
+
+            try {
+                const ctx = canvas.getContext('2d');
+                amortChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: schedule.map(s => formatChartDate(s.date)),
+                        datasets: [
+                            {
+                                label: 'Остаток номинала, ₽',
+                                data: schedule.map(s => s.remainingNominal),
+                                backgroundColor: 'rgba(22, 163, 74, 0.6)',
+                                borderColor: '#16a34a',
+                                borderWidth: 1,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Амортизация, ₽',
+                                data: schedule.map(s => s.amortization),
+                                type: 'line',
+                                borderColor: '#F3A80A',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('ru-RU') + ' ₽'
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Дата' }, ticks: { maxRotation: 45 } },
+                            y: {
+                                title: { display: true, text: 'Номинал, ₽' },
+                                beginAtZero: true,
+                                ticks: { callback: v => v >= 1000 ? (v/1000)+' тыс.' : v }
+                            },
+                            y1: {
+                                title: { display: true, text: 'Амортизация, ₽' },
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {}
+        }
+
+        let amortChartInstance = null;
+
+        // ============================================
+        // SECTION: API FUNCTIONS
+        // ============================================
+        
+        // --- Кэш для API-запросов ---
+        const apiCache = new Map();
+
+        // Очистка кэша API по TTL
+        setInterval(() => {
+            const now = Date.now();
+            for (const [key, value] of apiCache.entries()) {
+                if (now - value.timestamp > CACHE_TTL) {
+                    apiCache.delete(key);
+                }
+            }
+        }, 60000); // Проверка каждую минуту
+
+        // === Вспомогательная функция для fetch с CORS-прокси и кэшированием ===
+        async function fetchWithProxy(url, options = {}) {
+            const cached = apiCache.get(url);
+            if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+                return cached.response.clone();
+            }
+
+            try {
+                const response = await fetch(url, options);
+                apiCache.set(url, { response: response.clone(), timestamp: Date.now() });
+                return response;
+            } catch (error) {
+                const proxyUrl = CORS_PROXY_URL + url;
+                const response = await fetch(proxyUrl, options);
+                apiCache.set(url, { response: response.clone(), timestamp: Date.now() });
+                return response;
+            }
+        }
+
+        // === Загрузка средней ставки по депозитам из ЦБ РФ ===
+        let depositRateCache = { rate: 13.43, date: null };
+        async function updateAverageDepositRate() {
+            if (depositRateCache.date && Date.now() - depositRateCache.date < 3600000) {
+                return depositRateCache.rate;
+            }
+
+            try {
+                const response = await fetch('https://r.jina.ai/http://cbr.ru/eng/statistics/avgprocstav/');
+                if (response.ok) {
+                    const text = await response.text();
+                    const match = text.match(/I\.04\.2026.*?(\d+\.\d+)/);
+                    if (match && match[1]) {
+                        depositRateCache = { rate: parseFloat(match[1]), date: Date.now() };
+                        return depositRateCache.rate;
+                    }
+                }
+            } catch (e) {}
+
+            return depositRateCache.rate;
+        }
+
+        // Функция для загрузки данных об облигации по ISIN/названию
+        async function loadBondDataByISIN() {
+            const searchInput = document.getElementById('bond-search');
+            const searchQuery = searchInput.value.trim();
+
+            if (!searchQuery) {
+                alert('Пожалуйста, введите ISIN или название облигации');
+                return;
+            }
+
+            // Проверяем, похож ли ввод на ISIN (12 символов, начинается с SU, RU, XS)
+            const validISINPrefixes = ['SU', 'RU', 'XS'];
+            const isISIN = searchQuery.length === 12 && validISINPrefixes.some(prefix => searchQuery.toUpperCase().startsWith(prefix));
+
+            // Показываем индикатор загрузки
+            const button = document.getElementById('load-bond-data');
+            const originalText = button.textContent;
+            button.textContent = 'Загрузка...';
+            button.disabled = true;
+
+            try {
+                let data = null;
+                let secid = null;
+
+                if (isISIN) {
+                    // Поиск по ISIN
+                    secid = searchQuery.toUpperCase();
+
+                    for (const board of MOEX_BOARDS) {
+                        const url = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${board}/securities.json`;
+                        const params = new URLSearchParams({
+                            'iss.meta': 'off',
+                            'iss.only': 'securities',
+                            'securities.columns': MOEX_SECURITIES_COLUMNS
+                        });
+
+                        const fullUrl = `${url}?${params}`;
+                        const response = await fetchWithProxy(fullUrl);
+
+                        if (!response.ok) continue;
+
+                        const responseData = await response.json();
+
+                        if (responseData.securities && responseData.securities.data && responseData.securities.data.length > 0) {
+                            const securitiesData = responseData.securities.data;
+                            const columns = responseData.securities.columns;
+
+                            const securities = securitiesData.map(security =>
+                                Object.fromEntries(columns.map((col, i) => [col, security[i]]))
+                            );
+
+                            const bond = securities.find(s =>
+                                s.SECID === secid || s.ISIN === secid
+                            );
+
+                            if (bond) {
+                                data = bond;
+                                if (bond.ISIN === secid && bond.SECID !== secid) {
+                                    secid = bond.SECID;
+                                }
+                                // BOARDID может быть в разных форматах
+                                if (bond.BOARDID) {
+                                    data.BOARD = typeof bond.BOARDID === 'number' ? 
+                                        MOEX_BOARDS[bond.BOARDID] : bond.BOARDID;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Поиск по названию
+                    const results = await searchBondsByName(searchQuery);
+                    if (results && results.length > 0) {
+                        data = results[0];
+                        secid = data.SECID;
+                        if (results[0].BOARD) {
+                            data.BOARD = results[0].BOARD;
+                        }
+                    }
+                }
+
+                if (!data) {
+                    throw new Error('Облигация не найдена');
+                }
+
+                // Если BOARD не определён, пробуем все доски для получения дюрации
+                if (!data.BOARD) {
+                    for (const board of MOEX_BOARDS) {
+                        const testUrl = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${board}/securities/${secid}.json?iss.meta=off&iss.only=marketdata&marketdata.columns=DURATION`;
+                        try {
+                            const testResp = await fetchWithProxy(testUrl);
+                            if (testResp.ok) {
+                                data.BOARD = board;
+                                break;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // Для амортизируемых облигаций MOEX не возвращает INITIALNOMINAL
+                const bondTypeCheck = (data.BONDTYPE || '').toLowerCase();
+                const isAmortization = bondTypeCheck.includes('амортиз');
+                if (isAmortization && !data.INITIALNOMINAL && data.FACEVALUE) {
+                    data.INITIALNOMINAL = data.FACEVALUE * 2; // Обычно амортизация идёт до 50% номинала
+                }
+
+                // Получаем дополнительные данные из marketdata
+                const marketdataUrl = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${data.BOARD}/securities/${secid}.json`;
+                const marketdataParams = new URLSearchParams({
+                    'iss.meta': 'off',
+                    'iss.only': 'marketdata',
+                    'marketdata.columns': MOEX_MARKETDATA_COLUMNS
+                });
+                const marketdataFullUrl = `${marketdataUrl}?${marketdataParams}`;
+                const marketdataResponse = await fetchWithProxy(marketdataFullUrl);
+
+                if (marketdataResponse.ok) {
+                    const marketdata = await marketdataResponse.json();
+
+                    if (marketdata.marketdata && marketdata.marketdata.data && marketdata.marketdata.data.length > 0) {
+                        const marketdataRow = marketdata.marketdata.data[0];
+                        const marketdataColumns = marketdata.marketdata.columns;
+
+                        const marketdataObj = {};
+                        for (let i = 0; i < marketdataColumns.length; i++) {
+                            marketdataObj[marketdataColumns[i]] = marketdataRow[i];
+                        }
+
+                        if (marketdataObj.NOMINALCURRENCY) {
+                            data.NOMINALCURRENCY = marketdataObj.NOMINALCURRENCY;
+                        } else if (marketdataObj.CURRENCY) {
+                            data.NOMINALCURRENCY = marketdataObj.CURRENCY;
+                        }
+
+                        const priceFields = ['LAST', 'WAPRICE', 'LCLOSEPRICE', 'BID', 'OFFER'];
+                        for (const field of priceFields) {
+                            if (marketdataObj[field] !== undefined && marketdataObj[field] !== null && marketdataObj[field] !== '') {
+                                const priceValue = parseFloat(marketdataObj[field]);
+                                if (!isNaN(priceValue)) {
+                                    const nominal = parseFloat(data.NOMINAL) || 1000;
+                                    if ((priceValue > nominal * 0.9 && priceValue < nominal * 1.5) || priceValue > 1000) {
+                                        data.ACTUAL_PRICE = (priceValue / nominal) * 100;
+                                    } else {
+                                        data.ACTUAL_PRICE = priceValue;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Сохраняем дюрацию и спреды
+                        data.DURATION = parseFloat(marketdataObj.DURATION) || null;
+                        data.ZSPREAD = parseFloat(marketdataObj.ZSPREAD) || null;
+                        data.GSPREAD = parseFloat(marketdataObj.GSPREAD) || null;
+                    }
+                }
+
+                // Получаем данные о дюрации и спредах из marketdata_yields
+                try {
+                    const yieldsUrl = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${data.BOARD}/securities/${secid}.json`;
+                    const yieldsParams = new URLSearchParams({
+                        'iss.meta': 'off',
+                        'iss.only': 'marketdata_yields',
+                        'marketdata_yields.columns': 'DURATION,ZSPREADBP,GSPREADBP'
+                    });
+                    const yieldsFullUrl = `${yieldsUrl}?${yieldsParams}`;
+                    const yieldsResponse = await fetchWithProxy(yieldsFullUrl);
+                    
+                    if (yieldsResponse.ok) {
+                        const yieldsData = await yieldsResponse.json();
+                        if (yieldsData.marketdata_yields && yieldsData.marketdata_yields.data && yieldsData.marketdata_yields.data.length > 0) {
+                            const yieldsRow = yieldsData.marketdata_yields.data[0];
+                            const yieldsCols = yieldsData.marketdata_yields.columns;
+                            const durIdx = yieldsCols.indexOf('DURATION');
+                            const zIdx = yieldsCols.indexOf('ZSPREADBP');
+                            const gIdx = yieldsCols.indexOf('GSPREADBP');
+                            
+                            if (durIdx >= 0) data.DURATION = parseFloat(yieldsRow[durIdx]) || null;
+                            if (zIdx >= 0) data.ZSPREAD = parseFloat(yieldsRow[zIdx]) / 100 || null;
+                            if (gIdx >= 0) data.GSPREAD = parseFloat(yieldsRow[gIdx]) / 100 || null;
+                        }
+                    }
+                } catch (e) {
+                    // Ошибка при получении дюрации - не критично
+                }
+
+                // Получаем последнюю цену отдельным запросом
+                let lastPrice = null;
+                for (const board of MOEX_BOARDS) {
+                    const priceUrl = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${board}/securities/${secid}/trades.json`;
+                    const priceParams = new URLSearchParams({
+                        'limit': 1,
+                        'sort_order': 'desc',
+                        'trades.columns': 'PRICE',
+                        'iss.only': 'trades'
+                    });
+
+                    const fullPriceUrl = `${priceUrl}?${priceParams}`;
+                    const priceResponse = await fetchWithProxy(fullPriceUrl);
+
+                    if (priceResponse.ok) {
+                        const priceData = await priceResponse.json();
+                        if (priceData.trades && priceData.trades.data && priceData.trades.data.length > 0) {
+                            lastPrice = priceData.trades.data[0][0];
+                            break;
+                        }
+                    }
+                }
+                
+                // Вычисляем срок до погашения
+                let daysLeft = "Неизвестно";
+                let yearsLeft = "Неизвестно";
+                
+                const matdateStr = data.MATDATE;
+                if (matdateStr) {
+                    try {
+                        const matdate = new Date(matdateStr);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Устанавливаем время на начало дня
+                        
+                        const timeDiff = matdate.getTime() - today.getTime();
+                        daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Количество дней
+                        yearsLeft = Number((daysLeft / 365.25).toFixed(2));
+                        
+                        if (daysLeft <= 0) {
+                            daysLeft = 0;
+                            yearsLeft = 0.0;
+                        }
+                    } catch (e) {
+                    }
+                }
+                
+                // Формируем строку цены
+                let priceStr;
+                if (lastPrice) {
+                    priceStr = `${lastPrice.toFixed(4)} RUB`;
+                } else {
+                    const prevPrice = data.PREVPRICE;
+                    priceStr = prevPrice ? `${prevPrice.toFixed(4)} RUB (вчера)` : "Нет данных";
+                }
+                
+                // Заполняем поля формы полученными данными
+                // FACEVALUE - текущая номинальная стоимость (для амортизируемых облигаций)
+                // NOMINAL - номинальная стоимость
+                // INITIALNOMINAL - первоначальная номинальная стоимость
+                const faceValue = parseFloat(data.FACEVALUE);
+                const nominalCurrent = parseFloat(data.NOMINAL);
+                const nominalInitial = parseFloat(data.INITIALNOMINAL);
+                // Приоритет: FACEVALUE -> NOMINAL -> INITIALNOMINAL -> 1000
+                let nominal = 1000;
+                if (!isNaN(faceValue) && faceValue > 0) {
+                    nominal = faceValue;
+                } else if (!isNaN(nominalCurrent) && nominalCurrent > 0) {
+                    nominal = nominalCurrent;
+                } else if (!isNaN(nominalInitial) && nominalInitial > 0) {
+                    nominal = nominalInitial;
+                }
+                document.getElementById('nominal').value = nominal;
+
+                // Автоопределение валюты
+                const detectedCurrency = detectCurrency(data);
+                
+                // Устанавливаем валюту и курс
+                currencySelect.value = detectedCurrency;
+
+                // Загружаем актуальный курс валюты с MOEX
+                (async () => {
+                    const rate = await fetchCurrencyRate(detectedCurrency);
+                    exchangeRateInput.value = rate ? rate.toFixed(4) : '1.00';
+                    // Обновляем отображение после загрузки курса
+                    updateCurrencySymbols();
+                    // Пересчитываем с новым курсом
+                    calculate();
+                })();
+                
+                // Обновляем символы валюты (будет обновлено после загрузки курса)
+                updateCurrencySymbols();
+                
+                // Цена в процентах от номинала (котировка облигации)
+                let pricePercentage;
+                if (data.ACTUAL_PRICE) {
+                    // Используем актуальную цену из marketdata
+                    pricePercentage = data.ACTUAL_PRICE;
+                } else if (lastPrice) {
+                    // В API MOEX цены на облигации обычно возвращаются в процентах от номинала
+                    // Поэтому lastPrice уже содержит процентное значение (например, 102.8)
+                    pricePercentage = lastPrice;
+                } else if (data.PREVPRICE) {
+                    // Если PREVPRICE уже в процентах
+                    pricePercentage = data.PREVPRICE;
+                } else {
+                    pricePercentage = 100; // по умолчанию 100%
+                }
+                
+                document.getElementById('price').value = pricePercentage.toFixed(2); // Цена в процентах
+                document.getElementById('nkd').value = parseFloat(data.ACCRUEDINT) || 0; // НКД уже в рублях из API
+                document.getElementById('coupon-rate').value = parseFloat(data.COUPONPERCENT) || 0;
+                document.getElementById('coupon-value').value = parseFloat(data.COUPONVALUE) || ''; // Точный купон из API
+                
+                // Дата погашения — проверяем корректность
+                const matDate = new Date(matdateStr);
+                const isPerpetual = !matdateStr || matdateStr === '0000-00-00' || matdateStr.length !== 10 || isNaN(matDate.getTime()) || matDate.getFullYear() <= 2000;
+                
+                if (!isPerpetual) {
+                    document.getElementById('maturity').value = matdateStr;
+                } else {
+                    // Бессрочная облигация
+                    document.getElementById('maturity').value = '';
+                    document.getElementById('bond-name-result').textContent = (data.SHORTNAME || '') + ' (бессрочная)';
+                }
+
+                // Устанавливаем название облигации в карточке результатов
+                document.getElementById('bond-name-result').textContent = data.SHORTNAME || 'Название не указано';
+
+                // Сохраняем данные для использования в calculate()
+                bondDataFromApi = data;
+
+                // Находим похожие облигации того же эмитента
+                findSimilarBonds(data);
+
+                // Определяем и отображаем тип облигации с учётом валюты
+                const bondType = getBondType(data, detectedCurrency);
+                bondTypeResult.textContent = bondType.label;
+                bondTypeDetails.textContent = bondType.description;
+                bondTypeCard.style.display = 'block';
+                
+                // Отображаем дюрацию и спреды
+                const durationCard = document.getElementById('duration-card');
+                const zspreadCard = document.getElementById('zspread-card');
+                const gspreadCard = document.getElementById('gspread-card');
+                
+                const hasDuration = data.DURATION !== null && data.DURATION !== undefined && !isNaN(data.DURATION);
+                const hasZSpread = data.ZSPREAD !== null && data.ZSPREAD !== undefined && !isNaN(data.ZSPREAD);
+                const hasGSpread = data.GSPREAD !== null && data.GSPREAD !== undefined && !isNaN(data.GSPREAD);
+                
+                if (hasDuration) {
+                    document.getElementById('duration-result').textContent = Math.round(data.DURATION);
+                    durationCard.style.display = 'block';
+                } else {
+                    durationCard.style.display = 'none';
+                }
+                
+                if (hasZSpread) {
+                    document.getElementById('zspread-result').textContent = (data.ZSPREAD * 100).toFixed(0) + ' б.п.';
+                    zspreadCard.style.display = 'block';
+                } else {
+                    zspreadCard.style.display = 'none';
+                }
+                
+                if (hasGSpread) {
+                    document.getElementById('gspread-result').textContent = (data.GSPREAD * 100).toFixed(0) + ' б.п.';
+                    gspreadCard.style.display = 'block';
+                } else {
+                    gspreadCard.style.display = 'none';
+                }
+                
+                // Управляем видимостью полей валюты
+                const isCurrencyBond = bondType.type === 'currency';
+                updateCurrencyVisibility(isCurrencyBond);
+
+                // Отображаем дату оферты
+                const putOptionDate = data.PUTOPTIONDATE || '';
+                const callOptionDate = data.CALLOPTIONDATE || '';
+                const offerDate = data.OFFERDATE || '';
+                const offerDateValue = putOptionDate || callOptionDate || offerDate;
+
+                if (offerDateValue) {
+                    const offerDateObj = new Date(offerDateValue);
+                    const formattedDate = offerDateObj.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    let offerType = '';
+                    if (putOptionDate) {
+                        offerType = 'Put-оферта (продажа эмитенту)';
+                    } else if (callOptionDate) {
+                        offerType = 'Call-оферта (выкуп эмитентом)';
+                    } else {
+                        offerType = 'Оферта';
+                    }
+
+                    bondOfferResult.textContent = formattedDate;
+                    bondOfferDetails.textContent = offerType;
+                    bondOfferCard.style.display = 'block';
+                } else {
+                    bondOfferCard.style.display = 'none';
+                }
+
+                // Устанавливаем стандартные значения для других полей
+                document.getElementById('tax-rate').value = 13.00; // Стандартная налоговая ставка
+                
+                // Устанавливаем период купона (преобразуем из дней в количество выплат в году)
+                // Для флоатеров COUPONPERIOD может отсутствовать
+                let couponPeriodDays = parseInt(data.COUPONPERIOD) || DEFAULT_COUPON_PERIOD_DAYS;
+                
+                // Защита от некорректного периода (если погашение раньше следующего купона или др.)
+                if (couponPeriodDays <= 0) {
+                    couponPeriodDays = DEFAULT_COUPON_PERIOD_DAYS;
+                }
+                
+                let couponFrequency = Math.round(DAYS_IN_YEAR / couponPeriodDays);
+                
+                // Ограничиваем частоту от 1 до 12 раз в год
+                if (couponFrequency < 1) couponFrequency = 1;
+                if (couponFrequency > 12) couponFrequency = 12;
+                
+                document.getElementById('coupon-period').value = couponFrequency;
+
+                // Для флоатеров также заполняем coupon-value = 0 (будет пересчитано по ставке)
+                const bondTypeCheckFill = data.BONDTYPE || '';
+                const cupTypeCheckFill = data.CUPTYPE || '';
+                const isFloaterCheckFill = bondTypeCheckFill.includes('Флоатер') ||
+                                       bondTypeCheckFill.toLowerCase().includes('флоат') ||
+                                       cupTypeCheckFill.toLowerCase().includes('флоат') ||
+                                       cupTypeCheckFill.toLowerCase().includes('float');
+
+                if (isFloaterCheckFill) {
+                    // Для флоатеров используем последний известный купон из API, если есть
+                    const apiCouponValue = parseFloat(data.COUPONVALUE);
+                    if (!isNaN(apiCouponValue) && apiCouponValue > 0) {
+                        document.getElementById('coupon-value').value = apiCouponValue.toFixed(2);
+                    } else {
+                        document.getElementById('coupon-value').value = '0';
+                    }
+                }
+                
+                // Устанавливаем дату следующего купона
+                document.getElementById('next-coupon').value = data.NEXTCOUPON || '';
+                
+                // Устанавливаем текущую дату по умолчанию для даты покупки, если она не установлена
+                if (!document.getElementById('purchase-date').value) {
+                    const today = new Date();
+                    const formattedDate = today.toISOString().split('T')[0];
+                    document.getElementById('purchase-date').value = formattedDate;
+                }
+                
+                // Запускаем пересчет
+                calculate();
+                
+                // Показываем успешное сообщение
+                alert(`Данные об облигации успешно загружены!\n${priceStr}`);
+            } catch (error) {
+                // Показываем более подробное сообщение об ошибке
+                let errorMessage = 'Ошибка при загрузке данных об облигации.';
+
+                if (error.message.includes('CORS') || error.message.includes('CORS-прокси')) {
+                    errorMessage += ' Возможна проблема с политикой CORS при доступе к API.';
+                } else if (error.message.includes('404') || error.message.includes('не найдена')) {
+                    errorMessage += ' Облигация с указанным ISIN не найдена на торговых досках.';
+                } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+                    errorMessage += ' Сервер MOEX временно недоступен. Попробуйте позже.';
+                } else {
+                    errorMessage += ' Проверьте ISIN и попробуйте снова.';
+                }
+
+                alert(errorMessage + '\n\nВозможно, облигация не торгуется на МосБирже или делистирована.');
+            } finally {
+                // Восстанавливаем состояние кнопки
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Функция для оценки даты следующего купона на основе да��ы покупки и даты погашения
+// ============================================
+        // SECTION: SEARCH BY NAME
+        // ====================================
+
+        // Поиск облигаций по названию (SHORTNAME)
+        let searchTimeout = null;
+
+        async function searchBondsByName(query) {
+            if (!query || query.trim().length < 2) {
+                document.getElementById('search-results').style.display = 'none';
+                return [];
+            }
+
+            const searchQuery = query.trim().toUpperCase();
+            
+            // Проверяем кэш
+            const cached = searchCache.get(searchQuery);
+            if (cached && (Date.now() - cached.timestamp) < SEARCH_CACHE_TTL) {
+                return cached.results;
+            }
+
+            const results = [];
+            const searchedBoards = new Set();
+
+            for (const board of MOEX_BOARDS) {
+                if (searchedBoards.has(board)) continue;
+
+                const url = `${MOEX_BASE_URL}/engines/${MOEX_ENGINE}/markets/${MOEX_MARKET}/boards/${board}/securities.json`;
+                const params = new URLSearchParams({
+                    'iss.meta': 'off',
+                    'iss.only': 'securities',
+                    'securities.columns': MOEX_SEARCH_COLUMNS
+                });
+
+                try {
+                    const response = await fetchWithProxy(url + '?' + params);
+                    if (!response.ok) continue;
+
+                    const data = await response.json();
+                    if (!data.securities || !data.securities.data) continue;
+
+                    const columns = data.securities.columns;
+                    const securities = data.securities.data.map(row =>
+                        Object.fromEntries(columns.map((col, i) => [col, row[i]]))
+                    );
+
+                    // Фильтруем по названию
+                    const matched = securities.filter(s =>
+                        s.SHORTNAME && s.SHORTNAME.toUpperCase().includes(searchQuery)
+                    );
+
+                    for (const bond of matched) {
+                        // Проверяем, нет ли уже такого SECID в результатах
+                        if (!results.find(r => r.SECID === bond.SECID)) {
+                            results.push({ ...bond, BOARD: board });
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Ошибка поиска на доске ${board}:`, e);
+                }
+
+                // Ограничиваем количество запросов
+                if (results.length >= 50) break;
+            }
+
+            // Сохраняем в кэш
+            searchCache.set(searchQuery, { results, timestamp: Date.now() });
+            return results;
+        }
+
+        // === Поиск похожих облигаций того же эмитента ===
+        async function findSimilarBonds(currentBond) {
+            const similarCard = document.getElementById('similar-bonds-card');
+            if (!similarCard) return;
+
+            const emitentName = currentBond.EMITENT_FULL_NAME_RU || currentBond.NAME || currentBond.SHORTNAME || '';
+            if (!emitentName || emitentName.length < 3) {
+                similarCard.style.display = 'none';
+                return;
+            }
+
+            const currentSecid = currentBond.SECID;
+            const currentYtm = parseFloat(document.getElementById('ytm').textContent) || 0;
+
+            try {
+                const results = await searchBondsByName(emitentName);
+                const similar = results
+                    .filter(b => b.SECID !== currentSecid)
+                    .slice(0, 5);
+
+                if (similar.length === 0) {
+                    similarCard.style.display = 'none';
+                    return;
+                }
+
+                const list = document.getElementById('similar-bonds-list');
+                if (list) {
+                    list.innerHTML = similar.map(b => {
+                        const matDate = b.MATDATE ? new Date(b.MATDATE).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+                        const coupon = b.COUPONPERCENT ? `${parseFloat(b.COUPONPERCENT).toFixed(2)}%` : '—';
+                        return `<div class="coupon-item" style="cursor:pointer;" onclick="document.getElementById('bond-search').value='${b.SECID}';document.getElementById('load-bond-data').click();">
+                            <div>
+                                <span style="font-weight:600;color:#262626;">${b.SHORTNAME || b.SECID}</span>
+                                <div style="font-size:12px;color:#4C4B4B;">Погашение: ${matDate}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <span class="coupon-value">${coupon}</span>
+                                <div style="font-size:12px;color:#4C4B4B;">${b.SECID}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                similarCard.style.display = 'block';
+            } catch (e) {
+                similarCard.style.display = 'none';
+            }
+        }
+
+        // Отображение результатов поиска
+        function displaySearchResults(results) {
+            const resultsDiv = document.getElementById('search-results');
+            const resultsList = document.getElementById('search-results-list');
+
+            if (!results || results.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            resultsDiv.style.display = 'block';
+            resultsList.innerHTML = results.map(bond => {
+                const matDate = bond.MATDATE ? new Date(bond.MATDATE).toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }) : '—';
+                const coupon = bond.COUPONPERCENT ? `${bond.COUPONPERCENT}%` : '—';
+                const nominal = bond.NOMINAL || '—';
+
+                return `
+                    <div class="coupon-item" style="cursor: pointer; padding: 10px; border-radius: 6px; transition: background 0.2s;"
+                         onclick="selectBondFromSearch('${bond.SECID}', '${bond.ISIN}', '${bond.SHORTNAME.replace(/'/g, "\\'")}')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; color: #262626; font-size: 15px;">${bond.SHORTNAME}</div>
+                                <div style="font-size: 13px; color: #4C4B4B; margin-top: 4px;">
+                                    ISIN: ${bond.ISIN} | SECID: ${bond.SECID} | Доска: ${bond.BOARD}
+                                </div>
+                            </div>
+                            <div style="text-align: right; font-size: 13px; color: #4C4B4B;">
+                                <div>Погашение: ${matDate}</div>
+                                <div>Купон: ${coupon} | Номинал: ${nominal}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Выбор облигации из результатов поиска
+        function selectBondFromSearch(secid, isin, shortname) {
+            // Заполняем поле поиска ISIN и запускаем загрузку
+            document.getElementById('bond-search').value = isin;
+            document.getElementById('search-results').style.display = 'none';
+            
+            // Автоматически загружаем данные
+            loadBondDataByISIN();
+        }
+
+        // ============================================
+        // SECTION: INITIALIZATION
+        // ============================================
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Добавляем обработчик для кнопки загрузки данных
+            document.getElementById('load-bond-data').addEventListener('click', loadBondDataByISIN);
+
+            // Загружаем среднюю ставку по депозитам при запуске
+            const rate = await updateAverageDepositRate();
+            if (rate) {
+                document.getElementById('deposit-rate').value = rate.toFixed(2);
+                document.getElementById('deposit-rate-source').textContent = 'Средняя ставка топ-10 банков (ЦБ)';
+            }
+
+            // Симулятор флоатера
+            const simBtn = document.getElementById('floater-simulate-btn');
+            if (simBtn) {
+                simBtn.addEventListener('click', function() {
+                    const newKeyRate = parseFloat(document.getElementById('floater-rate-change').value) || 15;
+                    const simResult = document.getElementById('floater-sim-result');
+                    const currentCoupon = parseFloat(document.getElementById('coupon-rate').value) || 15;
+
+                    const BASE_RATE = 15;
+                    let spread = currentCoupon - BASE_RATE;
+
+                    if (bondDataFromApi && bondDataFromApi.COUPONPERCENT) {
+                        spread = parseFloat(bondDataFromApi.COUPONPERCENT) - BASE_RATE;
+                    }
+
+                    const newCoupon = newKeyRate + spread;
+                    const diff = newCoupon - currentCoupon;
+                    const diffStr = diff >= 0 ? '+' : '';
+
+                    const bondNameVal = document.getElementById('bond-name-result').textContent || 'облигации';
+                    const bondTypeCheck = bondDataFromApi ? (bondDataFromApi.BONDTYPE || '') : '';
+                    const cupTypeCheck = bondDataFromApi ? (bondDataFromApi.CUPTYPE || '') : '';
+                    const isFloaterBond = bondTypeCheck.includes('Флоатер') || bondTypeCheck.toLowerCase().includes('флоат') || cupTypeCheck.toLowerCase().includes('флоат');
+                    const bondTypeLabel = isFloaterBond ? 'флоатер' : 'фикс. купон';
+
+                    if (simResult) {
+                        simResult.innerHTML = `<strong>${bondNameVal}</strong> (${bondTypeLabel})<br><strong>Текущий купон:</strong> ${currentCoupon.toFixed(2)}%<br><strong>Базовая ставка:</strong> ${BASE_RATE}%<br><strong>Спред:</strong> ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}%<br><strong>При новой ЦБ ${newKeyRate.toFixed(2)}%:</strong> ${newCoupon.toFixed(2)}% (${diffStr}${diff.toFixed(2)}%)`;
+                    }
+                });
+            }
+
+            // Обработчик для универсального поиска (ISIN или название)
+            const searchInput = document.getElementById('bond-search');
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                // Очищаем предыдущий таймаут
+                if (searchTimeout) clearTimeout(searchTimeout);
+
+                // Проверяем, похож ли ввод на ISIN
+                const validISINPrefixes = ['SU', 'RU', 'XS'];
+                const isISIN = query.length === 12 && validISINPrefixes.some(prefix => query.toUpperCase().startsWith(prefix));
+
+                // Если это ISIN, не показываем результаты поиска по названию
+                if (isISIN) {
+                    document.getElementById('search-results').style.display = 'none';
+                    return;
+                }
+
+                // Задержка перед поиском (debounce)
+                searchTimeout = setTimeout(async () => {
+                    if (query.length >= 2) {
+                        const results = await searchBondsByName(query);
+                        displaySearchResults(results);
+                    } else {
+                        document.getElementById('search-results').style.display = 'none';
+                    }
+                }, 300);
+            });
+
+            // Обработка нажатия Enter в поле поиска
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadBondDataByISIN();
+                }
+            });
+
+            // Кнопка очистки
+            document.getElementById('clear-search').addEventListener('click', function() {
+                document.getElementById('bond-search').value = '';
+                document.getElementById('search-results').style.display = 'none';
+            });
+
+            // Устанавливаем текущую дату по умолчанию для даты покупки
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('purchase-date').value = formattedDate;
+            
+            // Кнопка экспорта в CSV
+            document.getElementById('export-csv').addEventListener('click', function() {
+                if (bondCountElement.textContent === '—') {
+                    alert('Сначала введите данные и рассчитайте');
+                    return;
+                }
+                exportToCSV();
+            });
+            
+            // Кнопка экспорта в PDF (TXT)
+            document.getElementById('export-pdf').addEventListener('click', function() {
+                if (bondCountElement.textContent === '—') {
+                    alert('Сначала введите данные и рассчитайте');
+                    return;
+                }
+                exportToPDF();
+            });
+            
+            // Кнопка очистки состояния
+            document.getElementById('clear-state').addEventListener('click', function() {
+                localStorage.removeItem(STORAGE_KEY);
+                investmentInput.value = '300000';
+                nominalInput.value = '';
+                priceInput.value = '';
+                nkdInput.value = '';
+                couponRateInput.value = '';
+                couponPeriodInput.value = '';
+                purchaseDateInput.value = formattedDate;
+                maturityInput.value = '';
+                taxRateInput.value = '13.00';
+                commissionInput.value = '0.05';
+                nextCouponInput.value = '';
+                couponValueInput.value = '';
+                currencySelect.value = 'RUB';
+                exchangeRateInput.value = '1.00';
+                const accountTypeEl = document.getElementById('account-type');
+                if (accountTypeEl) accountTypeEl.value = 'standard';
+                updateCurrencySymbols();
+                updateCurrencyVisibility(false);
+                clearAllFieldErrors();
+                calculate();
+            });
+            
+            // Восстановление состояния при загрузке
+            const stateLoaded = loadState();
+            if (stateLoaded && investmentInput.value && nominalInput.value && priceInput.value) {
+                calculate();
+            }
+            
+            
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+S - Сохранить
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    saveState();
+                    alert('Состояние сохранено');
+                }
+                // Ctrl+E - Экспорт CSV
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    if (bondCountElement.textContent !== '—') {
+                        exportToCSV();
+                    }
+                }
+                // Ctrl+N - Новый расчёт
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    localStorage.removeItem(STORAGE_KEY);
+                    investmentInput.value = '300000';
+                    nominalInput.value = '';
+                    priceInput.value = '';
+                    nkdInput.value = '';
+                    couponRateInput.value = '';
+                    couponPeriodInput.value = '';
+                    purchaseDateInput.value = formattedDate;
+                    maturityInput.value = '';
+                    taxRateInput.value = '13.00';
+                    commissionInput.value = '0.05';
+                    nextCouponInput.value = '';
+                    couponValueInput.value = '';
+                    currencySelect.value = 'RUB';
+                    exchangeRateInput.value = '1.00';
+                    updateCurrencySymbols();
+                    updateCurrencyVisibility(false);
+                    clearAllFieldErrors();
+                    calculate();
+                }
+                // Ctrl+P - Печать
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    window.print();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

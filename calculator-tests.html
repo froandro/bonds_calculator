@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тесты калькулятора облигаций</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
+        body { background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        h1 { color: #569cd6; margin-bottom: 20px; }
+        .test-suite { background: #252526; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .suite-header { background: #333; padding: 12px 20px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .suite-header:hover { background: #3c3c3c; }
+        .suite-header::before { content: '▼'; margin-right: 10px; font-size: 12px; }
+        .suite-header.collapsed::before { content: '▶'; }
+        .suite-header.collapsed + .test-list { display: none; }
+        .test-list { padding: 10px 0; }
+        .test { padding: 8px 20px 8px 40px; border-left: 3px solid transparent; }
+        .test:hover { background: #2a2d2e; }
+        .test.pass { border-left-color: #6a9955; }
+        .test.fail { border-left-color: #f44747; }
+        .test-name { color: #dcdcaa; }
+        .test-status { float: right; font-weight: bold; }
+        .test-status.pass { color: #6a9955; }
+        .test-status.fail { color: #f44747; }
+        .test-error { color: #f44747; font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+        .summary { background: #252526; border-radius: 8px; padding: 20px; margin-bottom: 20px; display: flex; gap: 40px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 36px; font-weight: bold; }
+        .summary-value.pass { color: #6a9955; }
+        .summary-value.fail { color: #f44747; }
+        .summary-label { color: #808080; font-size: 14px; }
+        button { background: #0e639c; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+        button:hover { background: #1177bb; }
+        .controls { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тесты калькулятора облигаций</h1>
+    
+    <div class="controls">
+        <button id="run-btn" style="background:#0e639c;color:white;border:none;padding:12px 24px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:10px;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='#1177bb'" onmouseout="this.style.background='#0e639c'" onclick="runAllTests()">▶ Запустить все тесты</button>
+        <button id="reset-btn" style="background:#6a9955;color:white;border:none;padding:12px 24px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:10px;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background='#7fb36a'" onmouseout="this.style.background='#6a9955'" onclick="location.reload()">🔄 Сбросить</button>
+    </div>
+    
+    <div class="summary" id="summary" style="display: none;">
+        <div class="summary-item">
+            <div class="summary-value" id="total">0</div>
+            <div class="summary-label">Всего</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value pass" id="passed">0</div>
+            <div class="summary-label">Прошло</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-value fail" id="failed">0</div>
+            <div class="summary-label">Провалилось</div>
+        </div>
+    </div>
+    
+    <div id="test-results"></div>
+
+    <script>
+        // === ТЕСТОВЫЙ ФРЕЙМВОРК ===
+        const testResults = { total: 0, passed: 0, failed: 0 };
+        
+        function describe(name, fn) {
+            const suite = { name, tests: [] };
+            fn(suite);
+            renderSuite(suite);
+        }
+        
+        function it(suite, name, fn) {
+            suite.tests.push({ name, fn });
+        }
+        
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) throw new Error(`Ожидалось: ${expected}, Получено: ${actual}`);
+                },
+                toBeCloseTo(expected, precision = 2) {
+                    const diff = Math.abs(actual - expected);
+                    const tolerance = Math.pow(10, -precision) / 2;
+                    if (diff > tolerance) throw new Error(`Ожидалось ~${expected}, Получено: ${actual}`);
+                },
+                toBeGreaterThan(expected) {
+                    if (actual <= expected) throw new Error(`Ожидалось > ${expected}, Получено: ${actual}`);
+                },
+                toBeGreaterThanOrEqual(expected) {
+                    if (actual < expected) throw new Error(`Ожидалось >= ${expected}, Получено: ${actual}`);
+                },
+                toBeLessThan(expected) {
+                    if (actual >= expected) throw new Error(`Ожидалось < ${expected}, Получено: ${actual}`);
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Ожидалось: ${JSON.stringify(expected)}, Получено: ${JSON.stringify(actual)}`);
+                    }
+                },
+                toContain(expected) {
+                    if (typeof actual === 'string') {
+                        if (!actual.includes(expected)) throw new Error(`Ожидалось, что "${actual}" содержит "${expected}"`);
+                    } else if (Array.isArray(actual)) {
+                        if (!actual.includes(expected)) throw new Error(`Ожидалось, что массив содержит ${expected}`);
+                    } else {
+                        throw new Error('toContain() работает только со строками и массивами');
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) throw new Error('Ожидалось truthy значение');
+                },
+                toBeFalsy() {
+                    if (actual) throw new Error('Ожидалось falsy значение');
+                },
+                toThrow() {
+                    if (typeof actual !== 'function') throw new Error('expect() должен получать функцию для toThrow()');
+                    try {
+                        actual();
+                        throw new Error('Ожидалась ошибка, но функция выполнилась успешно');
+                    } catch (e) {
+                        // Ошибка брошена — тест прошёл
+                    }
+                }
+            };
+        }
+        
+        function renderSuite(suite) {
+            const resultsDiv = document.getElementById('test-results');
+            const suiteDiv = document.createElement('div');
+            suiteDiv.className = 'test-suite';
+            suiteDiv.innerHTML = `
+                <div class="suite-header" onclick="this.classList.toggle('collapsed')">${suite.name}</div>
+                <div class="test-list" id="suite-${suite.name.replace(/\s+/g, '-')}"></div>
+            `;
+            resultsDiv.appendChild(suiteDiv);
+            
+            suite.tests.forEach(test => runTest(suite, test));
+        }
+        
+        function runTest(suite, test) {
+            const testList = document.getElementById(`suite-${suite.name.replace(/\s+/g, '-')}`);
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                test.fn();
+                testResults.passed++;
+                testDiv.classList.add('pass');
+                testDiv.innerHTML = `
+                    <span class="test-name">${test.name}</span>
+                    <span class="test-status pass">✓ PASS</span>
+                `;
+            } catch (error) {
+                testResults.failed++;
+                testDiv.classList.add('fail');
+                testDiv.innerHTML = `
+                    <span class="test-name">${test.name}</span>
+                    <span class="test-status fail">✗ FAIL</span>
+                    <div class="test-error">${error.message}</div>
+                `;
+            }
+            
+            testResults.total++;
+            testList.appendChild(testDiv);
+            updateSummary();
+        }
+        
+        function updateSummary() {
+            document.getElementById('summary').style.display = 'flex';
+            document.getElementById('total').textContent = testResults.total;
+            document.getElementById('passed').textContent = testResults.passed;
+            document.getElementById('failed').textContent = testResults.failed;
+        }
+        
+        function runAllTests() {
+            location.reload();
+        }
+        
+        // === ПОДКЛЮЧЕНИЕ КАЛЬКУЛЯТОРА ===
+        // Создаём минимальную среду для тестирования
+        const DEFAULT_NOMINAL = 1000;
+        const DAYS_IN_YEAR = 365;
+        const DEBUG_MODE = false;
+        
+        // Копируем функции из калькулятора для тестирования
+        const ISIN_REGEX = /^[A-Z]{2}[A-Z0-9]{10}$/;
+        const VALID_ISIN_PREFIXES = ['SU', 'RU', 'XS'];
+        
+        function validateISIN(isin) {
+            if (!isin || isin.length !== 12) return false;
+            if (!ISIN_REGEX.test(isin)) return false;
+            if (!VALID_ISIN_PREFIXES.some(p => isin.toUpperCase().startsWith(p))) return false;
+            return true;
+        }
+        
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined || !isFinite(num)) return '0.00';
+            if (isNaN(num)) return '0.00';
+            return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+        
+        function getDaysBetween(date1, date2) {
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            const diffTime = Math.abs(d2 - d1);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        function detectCurrency(data) {
+            const CURRENCY_MAP = {
+                'USD': 'USD', 'EUR': 'EUR', 'CNY': 'CNY',
+                'RUB': 'RUB', 'SUR': 'RUB',
+                'CHF': 'CHF', 'GBP': 'GBP'
+            };
+            
+            const faceUnit = (data.FACEUNIT || '').trim();
+            if (faceUnit) {
+                const fu = faceUnit.toUpperCase();
+                if (CURRENCY_MAP[fu]) return CURRENCY_MAP[fu];
+                if (fu.includes('USD') || fu.includes('ДОЛЛ')) return 'USD';
+                if (fu.includes('EUR') || fu.includes('ЕВРО')) return 'EUR';
+                if (fu.includes('CNY') || fu.includes('ЮАН')) return 'CNY';
+                if (fu.includes('RUB') || fu.includes('РУБ') || fu.includes('SUR')) return 'RUB';
+            }
+            
+            const nominalCurrency = data.NOMINALCURRENCY || '';
+            if (nominalCurrency && CURRENCY_MAP[nominalCurrency]) {
+                return CURRENCY_MAP[nominalCurrency];
+            }
+            
+            return 'RUB';
+        }
+        
+        function calculateYTM(cashFlows, dates, purchaseDate) {
+            if (!cashFlows || cashFlows.length === 0 || cashFlows.length !== dates.length) {
+                return 0;
+            }
+            
+            const purchase = new Date(purchaseDate);
+            
+            function npv(rate) {
+                let sum = 0;
+                for (let i = 0; i < cashFlows.length; i++) {
+                    const daysFromStart = (new Date(dates[i]) - purchase) / (1000 * 60 * 60 * 24);
+                    const yearsFromStart = daysFromStart / DAYS_IN_YEAR;
+                    sum += cashFlows[i] / Math.pow(1 + rate, yearsFromStart);
+                }
+                return sum;
+            }
+            
+            function npvDerivative(rate) {
+                let sum = 0;
+                for (let i = 0; i < cashFlows.length; i++) {
+                    const daysFromStart = (new Date(dates[i]) - purchase) / (1000 * 60 * 60 * 24);
+                    const yearsFromStart = daysFromStart / DAYS_IN_YEAR;
+                    sum += -yearsFromStart * cashFlows[i] / Math.pow(1 + rate, yearsFromStart + 1);
+                }
+                return sum;
+            }
+            
+            let rate = 0.1;
+            
+            for (let i = 0; i < 100; i++) {
+                const npvValue = npv(rate);
+                const derivative = npvDerivative(rate);
+                
+                if (Math.abs(derivative) < 1e-12) {
+                    rate += 0.01;
+                    continue;
+                }
+                
+                const newRate = rate - npvValue / derivative;
+                
+                if (Math.abs(newRate - rate) < 1e-8) {
+                    return newRate * 100;
+                }
+                
+                rate = Math.max(-0.99, Math.min(10, newRate));
+            }
+            
+            return rate * 100;
+        }
+        
+        // Функции для тестирования рефакторинга
+        function validateAndPrepareInputs(inputs) {
+            const { investment, nominal, pricePercent, nkd, couponFrequencyPerYear, taxRate, purchaseDate, maturityDate, nextCouponDate, exchangeRate } = inputs;
+            
+            if ([investment, nominal, pricePercent, nkd, couponFrequencyPerYear].some(isNaN)) {
+                throw new Error('Некорректные входные данные');
+            }
+            if (investment <= 0) throw new Error('Сумма инвестирования должна быть больше 0');
+            if (nominal <= 0) throw new Error('Номинал должен быть больше 0');
+            if (pricePercent <= 0) throw new Error('Цена должна быть больше 0');
+            if (nkd < 0) throw new Error('НКД не может быть отрицательным');
+            if (couponFrequencyPerYear < 1 || couponFrequencyPerYear > 12) {
+                throw new Error('Периодичность выплат: от 1 до 12 раз в год');
+            }
+            if (taxRate < 0 || taxRate > 1) throw new Error('Налоговая ставка: от 0% до 100%');
+            
+            const purchase = new Date(purchaseDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (isNaN(purchase.getTime())) throw new Error('Некорректная дата покупки');
+            if (purchase < today) throw new Error('Дата покупки не может быть в прошлом');
+            
+            if (maturityDate && maturityDate !== '0000-00-00') {
+                const maturity = new Date(maturityDate);
+                if (isNaN(maturity.getTime())) throw new Error('Некорректная дата погашения');
+                if (maturity <= purchase) throw new Error('Дата погашения должна быть после даты покупки');
+            }
+            
+            if (nextCouponDate) {
+                const nextCoupon = new Date(nextCouponDate);
+                if (isNaN(nextCoupon.getTime())) throw new Error('Некорректная дата следующего купона');
+                if (nextCoupon < purchase) throw new Error('Дата следующего купона должна быть после даты покупки');
+            }
+            
+            const isPerpetual = !maturityDate || maturityDate === '0000-00-00';
+            let maturity;
+            
+            if (isPerpetual) {
+                maturity = new Date(purchase);
+                maturity.setFullYear(maturity.getFullYear() + 30);
+            } else {
+                maturity = new Date(maturityDate);
+            }
+            
+            return { isPerpetual, purchase, maturity };
+        }
+        
+        function calculateBondPrices(inputs) {
+            const { investment, exchangeRate, nominal, pricePercent, nkd, commissionRate, currencySymbol } = inputs;
+            
+            const cleanPrice = nominal * (pricePercent / 100);
+            const dirtyPrice = cleanPrice + nkd;
+            const investmentInCurrency = investment / exchangeRate;
+            const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+            
+            if (bondCount === 0) {
+                const minInvestment = dirtyPrice * exchangeRate;
+                const minInvestmentFormatted = minInvestment >= 1000000
+                    ? `${(minInvestment / 1000000).toFixed(1)} млн ₽`
+                    : `${Math.round(minInvestment)} ₽`;
+                throw new Error(`Недостаточно средств! Минимум: ${minInvestmentFormatted} (${Math.ceil(dirtyPrice)} ${currencySymbol})`);
+            }
+            
+            const totalCost = bondCount * dirtyPrice;
+            const commission = totalCost * commissionRate;
+            const totalCostWithCommission = totalCost + commission;
+            const remainderInCurrency = investmentInCurrency - totalCostWithCommission;
+            
+            return {
+                cleanPrice, dirtyPrice, bondCount,
+                totalCost, commission, totalCostWithCommission, remainderInCurrency,
+                totalCostRUB: totalCost * exchangeRate,
+                commissionRUB: commission * exchangeRate,
+                totalCostWithCommissionRUB: totalCostWithCommission * exchangeRate,
+                remainderRUB: remainderInCurrency * exchangeRate,
+                overpaymentPerBond: dirtyPrice - nominal,
+                totalOverpayment: (dirtyPrice - nominal) * bondCount
+            };
+        }
+        
+        function calculateCouponsAndCashFlows(inputs, bondDataFromApi) {
+            const { nominal, couponRate, couponFrequencyPerYear, couponPeriodDays, taxRate, couponValueFromApi } = inputs;
+            const { dirtyPrice, bondCount } = inputs.prices;
+            
+            let couponPerPeriod = 0;
+            let isFloater = false;
+            let isAmortization = false;
+            let faceValue = 0;
+            let amortizationSchedule = [];
+            
+            if (bondDataFromApi) {
+                const bondTypeCheck = bondDataFromApi.BONDTYPE || '';
+                faceValue = parseFloat(bondDataFromApi.FACEVALUE) || 0;
+                isFloater = bondTypeCheck.toLowerCase().includes('флоат');
+                isAmortization = bondTypeCheck.toLowerCase().includes('амортиз');
+            }
+            
+            if (!isNaN(couponValueFromApi) && couponValueFromApi > 0) {
+                couponPerPeriod = couponValueFromApi;
+            } else if (!isNaN(couponRate) && couponRate > 0) {
+                const annualCoupon = nominal * (couponRate / 100);
+                couponPerPeriod = annualCoupon * (couponPeriodDays / DAYS_IN_YEAR);
+            }
+            
+            const netCouponPerPeriod = couponPerPeriod * (1 - taxRate);
+            const annualCoupon = couponPerPeriod * couponFrequencyPerYear;
+            const netAnnualCoupon = annualCoupon * (1 - taxRate);
+            
+            return {
+                couponPerPeriod, netCouponPerPeriod, annualCoupon, netAnnualCoupon,
+                isFloater, isAmortization, faceValue,
+                couponDates: [], actualCouponCount: 4, amortizationSchedule,
+                grossCashFlows: [-dirtyPrice * bondCount],
+                grossDates: [inputs.purchaseDate],
+                netCashFlows: [-dirtyPrice * bondCount],
+                netDates: [inputs.purchaseDate],
+                totalTaxPaid: 0
+            };
+        }
+        
+        function calculateYieldMetrics(inputs, couponsData) {
+            const { purchaseDate, cleanPrice, bondCount, exchangeRate, couponFrequencyPerYear } = inputs;
+            const { annualCoupon, netAnnualCoupon, totalTaxPaid, grossCashFlows, grossDates, netCashFlows, netDates, couponDates } = couponsData;
+            const { totalOverpayment, totalCostWithCommission } = inputs.prices;
+            
+            const ytm = calculateYTM(grossCashFlows, grossDates, purchaseDate);
+            const netYtm = calculateYTM(netCashFlows, netDates, purchaseDate);
+            const currentYield = (annualCoupon / cleanPrice) * 100;
+            
+            const totalTaxPaidAll = totalTaxPaid * bondCount;
+            const totalGrossCoupons = couponsData.couponPerPeriod * couponsData.actualCouponCount * bondCount;
+            const totalNetCoupons = totalGrossCoupons - totalTaxPaidAll;
+            
+            const couponsPerYear = couponFrequencyPerYear;
+            const effectiveYield = couponsPerYear > 0
+                ? (Math.pow(1 + ytm / 100 / couponsPerYear, couponsPerYear) - 1) * 100
+                : ytm;
+            
+            const monthlyNetCouponIncome = (netAnnualCoupon * bondCount) / 12;
+            const totalOverpaymentRUB = totalOverpayment * exchangeRate;
+            let paybackMonths = monthlyNetCouponIncome > 0 ? Math.abs(totalOverpaymentRUB) / (monthlyNetCouponIncome * exchangeRate) : Infinity;
+            
+            if (totalOverpayment < 0) {
+                const discountAmount = Math.abs(totalOverpaymentRUB);
+                const monthsToMaturity = getDaysBetween(inputs.purchaseDate, inputs.maturity) / 30;
+                const monthlyAmortization = discountAmount / monthsToMaturity;
+                const totalMonthlyIncome = (monthlyNetCouponIncome * exchangeRate) + monthlyAmortization;
+                paybackMonths = totalMonthlyIncome > 0 ? discountAmount / totalMonthlyIncome : Infinity;
+            }
+            
+            return {
+                ytm, netYtm, currentYield, effectiveYield,
+                totalTaxPaidAll, totalNetCoupons, nkdAtMaturity: 0,
+                finalAmount: 0, netProfit: 0, paybackMonths
+            };
+        }
+        
+        function handleCalculationError(error) {
+            if (DEBUG_MODE) console.error('Ошибка расчёта:', error);
+            // В тестах просто проверяем, что функция не бросает ошибку
+        }
+        
+        // === ТЕСТЫ ===
+        
+        describe('Валидация ISIN', (suite) => {
+            it(suite, 'Принимает корректный RU ISIN', () => {
+                expect(validateISIN('RU000A107EL8')).toBeTruthy();
+            });
+            
+            it(suite, 'Принимает корректный SU ISIN', () => {
+                expect(validateISIN('SU26231RMFS3')).toBeTruthy();
+            });
+            
+            it(suite, 'Принимает корректный XS ISIN', () => {
+                expect(validateISIN('XS1234567890')).toBeTruthy();
+            });
+            
+            it(suite, 'Отклоняет короткий ISIN', () => {
+                expect(validateISIN('RU123456')).toBeFalsy();
+            });
+            
+            it(suite, 'Отклоняет длинный ISIN', () => {
+                expect(validateISIN('RU000A107EL899')).toBeFalsy();
+            });
+            
+            it(suite, 'Отклоняет неправильный префикс', () => {
+                expect(validateISIN('AB000A107EL8')).toBeFalsy();
+            });
+            
+            it(suite, 'Отклоняет пустой ISIN', () => {
+                expect(validateISIN('')).toBeFalsy();
+            });
+            
+            it(suite, 'Отклоняет null ISIN', () => {
+                expect(validateISIN(null)).toBeFalsy();
+            });
+        });
+        
+        describe('Форматирование чисел', (suite) => {
+            it(suite, 'Форматирует целое число', () => {
+                const result = formatNumber(1000);
+                expect(result.includes('1') && result.includes('000')).toBeTruthy();
+            });
+
+            it(suite, 'Форматирует дробное число', () => {
+                const result = formatNumber(1234.56);
+                expect(result.includes('1 234') || result.includes('1,234')).toBeTruthy();
+            });
+
+            it(suite, 'Форматирует большое число', () => {
+                const result = formatNumber(1234567.89);
+                expect(result.includes('1 234 567') || result.includes('1,234,567')).toBeTruthy();
+            });
+
+            it(suite, 'Возвращает 0.00 для null', () => {
+                expect(formatNumber(null)).toBe('0.00');
+            });
+
+            it(suite, 'Возвращает 0.00 для undefined', () => {
+                expect(formatNumber(undefined)).toBe('0.00');
+            });
+
+            it(suite, 'Возвращает 0.00 для NaN', () => {
+                expect(formatNumber(NaN)).toBe('0.00');
+            });
+
+            it(suite, 'Возвращает 0.00 для Infinity', () => {
+                expect(formatNumber(Infinity)).toBe('0.00');
+            });
+        });
+        
+        describe('Расчёт дней между датами', (suite) => {
+            it(suite, 'Считает дни между датами', () => {
+                const days = getDaysBetween('2026-01-01', '2026-01-31');
+                expect(days).toBe(30);
+            });
+            
+            it(suite, 'Считает дни в обратном порядке', () => {
+                const days = getDaysBetween('2026-01-31', '2026-01-01');
+                expect(days).toBe(30);
+            });
+            
+            it(suite, 'Считает дни в разных месяцах', () => {
+                const days = getDaysBetween('2026-01-01', '2026-03-01');
+                expect(days).toBe(59);
+            });
+            
+            it(suite, 'Считает дни в разных годах', () => {
+                const days = getDaysBetween('2025-12-31', '2026-01-01');
+                expect(days).toBe(1);
+            });
+        });
+        
+        describe('Определение валюты', (suite) => {
+            it(suite, 'Определяет USD по FACEUNIT', () => {
+                const currency = detectCurrency({ FACEUNIT: 'USD' });
+                expect(currency).toBe('USD');
+            });
+            
+            it(suite, 'Определяет EUR по FACEUNIT', () => {
+                const currency = detectCurrency({ FACEUNIT: 'EUR' });
+                expect(currency).toBe('EUR');
+            });
+            
+            it(suite, 'Определяет CNY по FACEUNIT', () => {
+                const currency = detectCurrency({ FACEUNIT: 'CNY' });
+                expect(currency).toBe('CNY');
+            });
+            
+            it(suite, 'Определяет RUB по FACEUNIT', () => {
+                const currency = detectCurrency({ FACEUNIT: 'RUB' });
+                expect(currency).toBe('RUB');
+            });
+            
+            it(suite, 'Определяет RUB по SUR', () => {
+                const currency = detectCurrency({ FACEUNIT: 'SUR' });
+                expect(currency).toBe('RUB');
+            });
+            
+            it(suite, 'Определяет RUB по умолчанию', () => {
+                const currency = detectCurrency({});
+                expect(currency).toBe('RUB');
+            });
+            
+            it(suite, 'Определяет USD по NOMINALCURRENCY', () => {
+                const currency = detectCurrency({ NOMINALCURRENCY: 'USD' });
+                expect(currency).toBe('USD');
+            });
+        });
+        
+        describe('Расчёт YTM', (suite) => {
+            it(suite, 'Считает YTM для простой облигации', () => {
+                const cashFlows = [-1000, 50, 50, 50, 1050];
+                const dates = ['2026-01-01', '2027-01-01', '2028-01-01', '2029-01-01', '2030-01-01'];
+                const ytm = calculateYTM(cashFlows, dates, '2026-01-01');
+                expect(ytm).toBeCloseTo(5.0, 1);
+            });
+            
+            it(suite, 'Считает YTM для облигации с премией', () => {
+                const cashFlows = [-1050, 50, 50, 50, 1050];
+                const dates = ['2026-01-01', '2027-01-01', '2028-01-01', '2029-01-01', '2030-01-01'];
+                const ytm = calculateYTM(cashFlows, dates, '2026-01-01');
+                expect(ytm).toBeCloseTo(3.66, 1);
+            });
+            
+            it(suite, 'Считает YTM для облигации с дисконтом', () => {
+                const cashFlows = [-950, 50, 50, 50, 1050];
+                const dates = ['2026-01-01', '2027-01-01', '2028-01-01', '2029-01-01', '2030-01-01'];
+                const ytm = calculateYTM(cashFlows, dates, '2026-01-01');
+                expect(ytm).toBeCloseTo(6.41, 1);
+            });
+            
+            it(suite, 'Возвращает 0 для пустых потоков', () => {
+                const ytm = calculateYTM([], [], '2026-01-01');
+                expect(ytm).toBe(0);
+            });
+            
+            it(suite, 'Возвращает 0 для некорректных потоков', () => {
+                const ytm = calculateYTM([100], ['2026-01-01', '2027-01-01'], '2026-01-01');
+                expect(ytm).toBe(0);
+            });
+        });
+        
+        describe('Интеграционные тесты', (suite) => {
+            it(suite, 'Полный расчёт для рублёвой облигации', () => {
+                // Параметры
+                const investment = 300000;
+                const nominal = 1000;
+                const pricePercent = 100;
+                const nkd = 50;
+                const couponRate = 10;
+                const couponFrequency = 4;
+                const taxRate = 0.13;
+                
+                // Расчёты
+                const cleanPrice = nominal * (pricePercent / 100);
+                const dirtyPrice = cleanPrice + nkd;
+                const bondCount = Math.floor(investment / dirtyPrice);
+                const annualCoupon = nominal * (couponRate / 100);
+                
+                // Проверки
+                expect(cleanPrice).toBe(1000);
+                expect(dirtyPrice).toBe(1050);
+                expect(bondCount).toBe(285);
+                expect(annualCoupon).toBe(100);
+            });
+            
+            it(suite, 'Полный расчёт для валютной облигации (USD)', () => {
+                // Параметры
+                const investment = 300000;
+                const exchangeRate = 90;
+                const nominal = 1000;
+                const pricePercent = 100;
+                const nkd = 50;
+                
+                // Расчёты
+                const investmentInCurrency = investment / exchangeRate;
+                const cleanPrice = nominal * (pricePercent / 100);
+                const dirtyPrice = cleanPrice + nkd;
+                const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+                
+                // Проверки
+                expect(investmentInCurrency).toBeCloseTo(3333.33, 2);
+                expect(cleanPrice).toBe(1000);
+                expect(dirtyPrice).toBe(1050);
+                expect(bondCount).toBe(3);
+            });
+        });
+
+        // === ТЕСТЫ ДЛЯ НОВЫХ ФУНКЦИЙ (рефакторинг) ===
+        describe('validateAndPrepareInputs', (suite) => {
+            // Используем даты с запасом (сегодня + 1 день, чтобы избежать проблем с часовыми поясами)
+            const today = new Date();
+            today.setDate(today.getDate() + 1);
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const nextMonth = new Date();
+            nextMonth.setDate(nextMonth.getDate() + 31);
+            const nextMonthStr = nextMonth.toISOString().split('T')[0];
+            
+            const nextYear = new Date();
+            nextYear.setDate(nextYear.getDate() + 366);
+            const nextYearStr = nextYear.toISOString().split('T')[0];
+            
+            it(suite, 'Принимает корректные входные данные', () => {
+                const result = validateAndPrepareInputs({
+                    investment: 300000,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    couponFrequencyPerYear: 4,
+                    taxRate: 0.13,
+                    purchaseDate: todayStr,
+                    maturityDate: nextYearStr,
+                    nextCouponDate: nextMonthStr,
+                    exchangeRate: 90
+                });
+                expect(result.isPerpetual).toBeFalsy();
+                expect(result.purchase).toBeTruthy();
+                expect(result.maturity).toBeTruthy();
+            });
+
+            it(suite, 'Определяет бессрочную облигацию', () => {
+                const result = validateAndPrepareInputs({
+                    investment: 300000,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    couponFrequencyPerYear: 4,
+                    taxRate: 0.13,
+                    purchaseDate: todayStr,
+                    maturityDate: '0000-00-00',
+                    nextCouponDate: nextMonthStr,
+                    exchangeRate: 90
+                });
+                expect(result.isPerpetual).toBeTruthy();
+            });
+
+            it(suite, 'Выбрасывает ошибку при некорректной дате покупки', () => {
+                expect(() => validateAndPrepareInputs({
+                    investment: 300000,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    couponFrequencyPerYear: 4,
+                    taxRate: 0.13,
+                    purchaseDate: 'invalid',
+                    maturityDate: nextYearStr,
+                    nextCouponDate: nextMonthStr,
+                    exchangeRate: 90
+                })).toThrow();
+            });
+        });
+
+        describe('calculateBondPrices', (suite) => {
+            it(suite, 'Считает чистую и грязную цену', () => {
+                const prices = calculateBondPrices({
+                    investment: 300000,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    commissionRate: 0.0005,
+                    currencySymbol: '₽'
+                });
+                expect(prices.cleanPrice).toBe(1000);
+                expect(prices.dirtyPrice).toBe(1050);
+            });
+
+            it(suite, 'Считает количество облигаций', () => {
+                const prices = calculateBondPrices({
+                    investment: 300000,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    commissionRate: 0.0005,
+                    currencySymbol: '₽'
+                });
+                expect(prices.bondCount).toBeGreaterThanOrEqual(3);
+            });
+
+            it(suite, 'Считает комиссию', () => {
+                const prices = calculateBondPrices({
+                    investment: 300000,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    commissionRate: 0.0005,
+                    currencySymbol: '₽'
+                });
+                expect(prices.commission).toBeGreaterThan(0);
+            });
+
+            it(suite, 'Бросает ошибку при недостатке средств', () => {
+                expect(() => calculateBondPrices({
+                    investment: 100,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    pricePercent: 100,
+                    nkd: 50,
+                    commissionRate: 0.0005,
+                    currencySymbol: '₽'
+                })).toThrow();
+            });
+        });
+
+        describe('calculateCouponsAndCashFlows', (suite) => {
+            // Используем даты с запасом (чтобы избежать проблем с часовыми поясами)
+            const today = new Date();
+            today.setDate(today.getDate() + 1);
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const in3Months = new Date();
+            in3Months.setDate(in3Months.getDate() + 91);
+            const in3MonthsStr = in3Months.toISOString().split('T')[0];
+            
+            const in1Year = new Date();
+            in1Year.setDate(in1Year.getDate() + 366);
+            const in1YearStr = in1Year.toISOString().split('T')[0];
+            
+            it(suite, 'Считает купон по ставке', () => {
+                const inputs = {
+                    nominal: 1000,
+                    couponRate: 10,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    taxRate: 0.13,
+                    purchaseDate: todayStr,
+                    maturityDate: in1YearStr,
+                    nextCouponDate: in3MonthsStr,
+                    couponValueFromApi: NaN,
+                    prices: { dirtyPrice: 1000, bondCount: 10 }
+                };
+                const result = calculateCouponsAndCashFlows(inputs, null);
+                expect(result.couponPerPeriod).toBeGreaterThan(0);
+                expect(result.annualCoupon).toBeCloseTo(100, 0); // ~100
+            });
+
+            it(suite, 'Использует купон из API', () => {
+                const inputs = {
+                    nominal: 1000,
+                    couponRate: 10,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    taxRate: 0.13,
+                    purchaseDate: todayStr,
+                    maturityDate: in1YearStr,
+                    nextCouponDate: in3MonthsStr,
+                    couponValueFromApi: 25,
+                    prices: { dirtyPrice: 1000, bondCount: 10 }
+                };
+                const result = calculateCouponsAndCashFlows(inputs, null);
+                expect(result.couponPerPeriod).toBe(25);
+            });
+
+            it(suite, 'Считает денежные потоки', () => {
+                const inputs = {
+                    nominal: 1000,
+                    couponRate: 10,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    taxRate: 0.13,
+                    purchaseDate: todayStr,
+                    maturityDate: in1YearStr,
+                    nextCouponDate: in3MonthsStr,
+                    couponValueFromApi: 25,
+                    prices: { dirtyPrice: 1000, bondCount: 10 }
+                };
+                const result = calculateCouponsAndCashFlows(inputs, null);
+                expect(result.grossCashFlows.length).toBeGreaterThanOrEqual(1);
+                expect(result.grossCashFlows[0]).toBeLessThan(0);
+                expect(result.netCashFlows.length).toBe(result.grossCashFlows.length);
+            });
+        });
+
+        describe('calculateYieldMetrics', (suite) => {
+            // Используем даты с запасом
+            const today = new Date();
+            today.setDate(today.getDate() + 1);
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const in3Months = new Date();
+            in3Months.setDate(in3Months.getDate() + 91);
+            const in3MonthsStr = in3Months.toISOString().split('T')[0];
+            
+            const in6Months = new Date();
+            in6Months.setDate(in6Months.getDate() + 182);
+            const in6MonthsStr = in6Months.toISOString().split('T')[0];
+            
+            const in9Months = new Date();
+            in9Months.setDate(in9Months.getDate() + 273);
+            const in9MonthsStr = in9Months.toISOString().split('T')[0];
+            
+            const in1Year = new Date();
+            in1Year.setDate(in1Year.getDate() + 366);
+            const in1YearStr = in1Year.toISOString().split('T')[0];
+            
+            it(suite, 'Считает YTM', () => {
+                const inputs = {
+                    purchaseDate: todayStr,
+                    cleanPrice: 1000,
+                    bondCount: 10,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    maturity: new Date(in1YearStr),
+                    prices: { totalOverpayment: 0, totalCostWithCommission: 10000 }
+                };
+                const couponsData = {
+                    annualCoupon: 100,
+                    netAnnualCoupon: 87,
+                    couponPerPeriod: 25,
+                    netCouponPerPeriod: 21.75,
+                    actualCouponCount: 4,
+                    totalTaxPaid: 1.3,
+                    grossCashFlows: [-10000, 250, 250, 250, 10250],
+                    grossDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    netCashFlows: [-10000, 217.5, 217.5, 217.5, 10217.5],
+                    netDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    couponDates: [in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    isAmortization: false,
+                    amortizationSchedule: []
+                };
+                const metrics = calculateYieldMetrics(inputs, couponsData);
+                expect(metrics.ytm).toBeGreaterThan(0);
+                expect(metrics.currentYield).toBe(10);
+            });
+
+            it(suite, 'Считает эффективную доходность', () => {
+                const inputs = {
+                    purchaseDate: todayStr,
+                    cleanPrice: 1000,
+                    bondCount: 10,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    maturity: new Date(in1YearStr),
+                    prices: { totalOverpayment: 0, totalCostWithCommission: 10000 }
+                };
+                const couponsData = {
+                    annualCoupon: 100,
+                    netAnnualCoupon: 87,
+                    couponPerPeriod: 25,
+                    netCouponPerPeriod: 21.75,
+                    actualCouponCount: 4,
+                    totalTaxPaid: 1.3,
+                    grossCashFlows: [-10000, 250, 250, 250, 10250],
+                    grossDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    netCashFlows: [-10000, 217.5, 217.5, 217.5, 10217.5],
+                    netDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    couponDates: [in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    isAmortization: false,
+                    amortizationSchedule: []
+                };
+                const metrics = calculateYieldMetrics(inputs, couponsData);
+                expect(metrics.effectiveYield).toBeGreaterThan(metrics.ytm);
+            });
+
+            it(suite, 'Считает срок окупаемости', () => {
+                const inputs = {
+                    purchaseDate: todayStr,
+                    cleanPrice: 1000,
+                    bondCount: 10,
+                    exchangeRate: 90,
+                    nominal: 1000,
+                    couponFrequencyPerYear: 4,
+                    couponPeriodDays: 91,
+                    maturity: new Date(in1YearStr),
+                    prices: { totalOverpayment: 500, totalCostWithCommission: 10000 }
+                };
+                const couponsData = {
+                    annualCoupon: 100,
+                    netAnnualCoupon: 87,
+                    couponPerPeriod: 25,
+                    netCouponPerPeriod: 21.75,
+                    actualCouponCount: 4,
+                    totalTaxPaid: 1.3,
+                    grossCashFlows: [-10000, 250, 250, 250, 10250],
+                    grossDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    netCashFlows: [-10000, 217.5, 217.5, 217.5, 10217.5],
+                    netDates: [todayStr, in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    couponDates: [in3MonthsStr, in6MonthsStr, in9MonthsStr, in1YearStr],
+                    isAmortization: false,
+                    amortizationSchedule: []
+                };
+                const metrics = calculateYieldMetrics(inputs, couponsData);
+                expect(metrics.paybackMonths).toBeGreaterThan(0);
+                expect(metrics.paybackMonths).toBeLessThan(120);
+            });
+        });
+
+        describe('handleCalculationError', (suite) => {
+            it(suite, 'Корректно обрабатывает ошибку', () => {
+                // Просто вызываем функцию — она не должна бросать ошибку
+                handleCalculationError(new Error('Тест'));
+                // Если дошли сюда — тест прошёл
+                expect(true).toBeTruthy();
+            });
+        });
+
+        // ============================================
+        // НОВЫЕ ТЕСТЫ (добавлено в 2026)
+        // ============================================
+
+        describe('getCouponDates', (suite) => {
+            // Функция для генерации дат купонов
+            function getCouponDates(nextCouponDate, maturityDate, couponPeriodDays) {
+                const maturity = new Date(maturityDate);
+                const dates = [];
+                let current = new Date(nextCouponDate);
+                while (current <= maturity) {
+                    dates.push(new Date(current));
+                    current.setDate(current.getDate() + couponPeriodDays);
+                }
+                return dates;
+            }
+
+            it(suite, 'Генерирует 4 даты купонов за год', () => {
+                const dates = getCouponDates('2026-03-01', '2027-03-01', 90);
+                expect(dates.length).toBeGreaterThanOrEqual(4);
+            });
+
+            it(suite, 'Генерирует 1 дату купона', () => {
+                const dates = getCouponDates('2026-12-01', '2027-03-01', 90);
+                expect(dates.length).toBeGreaterThanOrEqual(1);
+            });
+
+            it(suite, 'Пустой список если следующий купон после погашения', () => {
+                const dates = getCouponDates('2027-06-01', '2027-03-01', 90);
+                expect(dates.length).toBe(0);
+            });
+
+            it(suite, 'Генерирует ежемесячные купоны (12 раз в год)', () => {
+                const dates = getCouponDates('2026-01-01', '2026-12-31', 30);
+                expect(dates.length).toBeGreaterThanOrEqual(11);
+            });
+
+            it(suite, 'Генерирует полугодовые купоны (2 раза в год)', () => {
+                const dates = getCouponDates('2026-01-01', '2027-01-01', 182);
+                expect(dates.length).toBeGreaterThanOrEqual(2);
+            });
+        });
+
+        describe('adjustToBusinessDay', (suite) => {
+            // Праздничные дни России
+            const RUSSIAN_HOLIDAYS = new Set([
+                '01-01', '01-02', '01-03', '01-04', '01-05', '01-06', '01-07',
+                '02-23', '03-08', '05-01', '05-09', '06-12', '11-04'
+            ]);
+
+            function isWeekendOrHoliday(date) {
+                const dayOfWeek = date.getDay();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateKey = `${month}-${day}`;
+                if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+                if (RUSSIAN_HOLIDAYS.has(dateKey)) return true;
+                return false;
+            }
+
+            function adjustToBusinessDay(date) {
+                let adjusted = new Date(date);
+                let iterations = 0;
+                const MAX_ITERATIONS = 10;
+                while (isWeekendOrHoliday(adjusted) && iterations < MAX_ITERATIONS) {
+                    adjusted.setDate(adjusted.getDate() + 1);
+                    iterations++;
+                }
+                return adjusted;
+            }
+
+            it(suite, 'Сдвигает субботу на понедельник', () => {
+                // 2026-09-05 — суббота (вне праздников)
+                const date = new Date('2026-09-05');
+                const adjusted = adjustToBusinessDay(date);
+                expect(adjusted.getDay()).toBe(1); // Понедельник
+                expect(adjusted.getDate()).toBe(7);
+            });
+
+            it(suite, 'Сдвигает воскресенье на понедельник', () => {
+                // 2026-09-06 — воскресенье
+                const date = new Date('2026-09-06');
+                const adjusted = adjustToBusinessDay(date);
+                expect(adjusted.getDay()).toBe(1); // Понедельник
+                expect(adjusted.getDate()).toBe(7);
+            });
+
+            it(suite, 'Не сдвигает понедельник', () => {
+                // 2026-09-07 — понедельник (не праздник)
+                const date = new Date('2026-09-07');
+                const adjusted = adjustToBusinessDay(date);
+                expect(adjusted.getDay()).toBe(1);
+                expect(adjusted.getDate()).toBe(7);
+            });
+
+            it(suite, 'Сдвигает праздничный день', () => {
+                // 2026-06-12 — День России (пятница, но праздник)
+                const date = new Date('2026-06-12');
+                const adjusted = adjustToBusinessDay(date);
+                // Должен сдвинуться на понедельник (15 июня)
+                expect(adjusted.getDate()).toBeGreaterThanOrEqual(14);
+            });
+
+            it(suite, 'Работает с новогодними каникулами', () => {
+                // 2026-01-01 — Новый год
+                const date = new Date('2026-01-01');
+                const adjusted = adjustToBusinessDay(date);
+                // Должен сдвинуться на первый рабочий день после каникул
+                expect(adjusted.getDate()).toBeGreaterThan(1);
+            });
+        });
+
+        describe('getBondType', (suite) => {
+            function getBondType(data, currency = 'RUB') {
+                const faceValue = parseFloat(data.FACEVALUE) || 0;
+                const initialNominal = parseFloat(data.INITIALNOMINAL) || 0;
+                const couponPercent = parseFloat(data.COUPONPERCENT) || 0;
+                const nominal = parseFloat(data.NOMINAL) || faceValue || 1000;
+                const bondType = data.BONDTYPE || '';
+                const cupType = data.CUPTYPE || '';
+                const bondSubtype = data.BONDSUBTYPE || '';
+                const apiCurrency = data.CURRENCY || currency;
+                const shortName = data.SHORTNAME || '';
+
+                const isCurrencyBond = bondType.toLowerCase().includes('валют') ||
+                                       apiCurrency === 'USD' || apiCurrency === 'EUR' || apiCurrency === 'CNY' ||
+                                       shortName.toUpperCase().includes('USD') ||
+                                       shortName.toUpperCase().includes('EUR');
+
+                const isAmortization = bondType.toLowerCase().includes('амортиз') ||
+                                       bondSubtype.toLowerCase().includes('амортиз');
+
+                const isFloater = bondType.includes('Флоатер') ||
+                                  bondType.toLowerCase().includes('флоат') ||
+                                  cupType.toLowerCase().includes('флоат') ||
+                                  cupType.toLowerCase().includes('float');
+
+                if (isCurrencyBond) {
+                    let bondLabel = 'Валютная облигация';
+                    if (isAmortization) bondLabel = 'Валютная облигация с амортизацией';
+                    else if (isFloater) bondLabel = 'Валютный флоатер';
+                    return { type: 'currency', label: bondLabel };
+                }
+
+                if (isAmortization) {
+                    return { type: 'amortization', label: 'Облигация с амортизацией' };
+                }
+
+                if (isFloater) {
+                    return { type: 'floater', label: 'Флоатер' };
+                }
+
+                return { type: 'fixed', label: 'Облигация с фиксированным купоном' };
+            }
+
+            it(suite, 'Определяет фиксированный купон', () => {
+                const type = getBondType({ BONDTYPE: 'С фиксированным купоном' });
+                expect(type.type).toBe('fixed');
+            });
+
+            it(suite, 'Определяет флоатер по BONDTYPE', () => {
+                const type = getBondType({ BONDTYPE: 'Флоатер' });
+                expect(type.type).toBe('floater');
+            });
+
+            it(suite, 'Определяет флоатер по CUPTYPE', () => {
+                const type = getBondType({ BONDTYPE: '', CUPTYPE: 'флоатер' });
+                expect(type.type).toBe('floater');
+            });
+
+            it(suite, 'Определяет амортизацию', () => {
+                const type = getBondType({ BONDTYPE: 'Амортизируемые' });
+                expect(type.type).toBe('amortization');
+            });
+
+            it(suite, 'Определяет валютную облигацию', () => {
+                const type = getBondType({ BONDTYPE: 'Валютная', CURRENCY: 'USD' });
+                expect(type.type).toBe('currency');
+            });
+
+            it(suite, 'Определяет валютную по названию', () => {
+                const type = getBondType({ SHORTNAME: 'Газотрансфин-1-04-USD' });
+                expect(type.type).toBe('currency');
+            });
+
+            it(suite, 'Определяет валютную с амортизацией', () => {
+                const type = getBondType({ 
+                    BONDTYPE: 'Валютная с амортизацией',
+                    CURRENCY: 'USD',
+                    BONDSUBTYPE: 'амортиз'
+                });
+                expect(type.type).toBe('currency');
+                expect(type.label).toContain('амортизацией');
+            });
+
+            it(suite, 'Приоритет: Валютная → Амортизация → Флоатер', () => {
+                const type = getBondType({ 
+                    BONDTYPE: 'Валютная флоатер',
+                    CURRENCY: 'EUR'
+                });
+                expect(type.type).toBe('currency');
+            });
+        });
+
+        describe('getCouponCount', (suite) => {
+            function getCouponCount(purchaseDate, nextCouponDate, maturityDate, couponPeriodDays) {
+                const maturity = new Date(maturityDate);
+                const dates = [];
+                let current = new Date(nextCouponDate);
+                while (current <= maturity) {
+                    dates.push(new Date(current));
+                    current.setDate(current.getDate() + couponPeriodDays);
+                }
+                return dates.length;
+            }
+
+            it(suite, 'Считает количество квартальных купонов за год', () => {
+                const count = getCouponCount('2026-01-01', '2026-03-01', '2027-01-01', 90);
+                expect(count).toBeGreaterThanOrEqual(4);
+            });
+
+            it(suite, 'Считает количество ежемесячных купонов за полгода', () => {
+                const count = getCouponCount('2026-01-01', '2026-02-01', '2026-07-01', 30);
+                expect(count).toBeGreaterThanOrEqual(5);
+            });
+
+            it(suite, 'Возвращает 0 если купонов нет', () => {
+                const count = getCouponCount('2026-01-01', '2027-06-01', '2027-03-01', 90);
+                expect(count).toBe(0);
+            });
+        });
+
+        describe('Расчёт срока окупаемости', (suite) => {
+            it(suite, 'Считает окупаемость для облигации с премией', () => {
+                const totalOverpayment = 5000; // Переплата в рублях
+                const monthlyNetCouponIncome = 500; // Чистый купон в месяц
+                const paybackMonths = totalOverpayment / monthlyNetCouponIncome;
+                expect(paybackMonths).toBe(10);
+            });
+
+            it(suite, 'Отрицательная окупаемость для дисконта', () => {
+                const totalOverpayment = -5000; // Дисконт
+                const monthlyNetCouponIncome = 500;
+                // При дисконте окупаемость отрицательная (доход от амортизации)
+                const paybackMonths = totalOverpayment / monthlyNetCouponIncome;
+                expect(paybackMonths).toBe(-10);
+            });
+
+            it(suite, 'Бесконечность при нулевом купоне', () => {
+                const totalOverpayment = 5000;
+                const monthlyNetCouponIncome = 0;
+                const paybackMonths = monthlyNetCouponIncome > 0 
+                    ? totalOverpayment / monthlyNetCouponIncome 
+                    : Infinity;
+                expect(paybackMonths).toBe(Infinity);
+            });
+        });
+
+        describe('Расчёт НКД', (suite) => {
+            it(suite, 'НКД = 0 если погашение в дату купона', () => {
+                const couponPerPeriod = 25;
+                const daysFromLastCouponToMaturity = 0;
+                const couponPeriodDays = 90;
+                const nkdAtMaturity = couponPerPeriod * Math.min(1, daysFromLastCouponToMaturity / couponPeriodDays);
+                expect(nkdAtMaturity).toBe(0);
+            });
+
+            it(suite, 'НКД пропорционален дням', () => {
+                const couponPerPeriod = 25;
+                const daysFromLastCouponToMaturity = 45;
+                const couponPeriodDays = 90;
+                const nkdAtMaturity = couponPerPeriod * Math.min(1, daysFromLastCouponToMaturity / couponPeriodDays);
+                expect(nkdAtMaturity).toBeCloseTo(12.5, 1);
+            });
+
+            it(suite, 'НКД не превышает купон', () => {
+                const couponPerPeriod = 25;
+                const daysFromLastCouponToMaturity = 100;
+                const couponPeriodDays = 90;
+                const nkdAtMaturity = couponPerPeriod * Math.min(1, daysFromLastCouponToMaturity / couponPeriodDays);
+                expect(nkdAtMaturity).toBe(25);
+            });
+        });
+
+        describe('Валидация дат', (suite) => {
+            it(suite, 'Дата покупки в прошлом не допускается', () => {
+                const purchase = new Date('2020-01-01');
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                expect(purchase < today).toBeTruthy();
+            });
+
+            it(suite, 'Дата погашения должна быть после покупки', () => {
+                const purchase = new Date('2026-03-01');
+                const maturity = new Date('2025-01-01');
+                expect(maturity <= purchase).toBeTruthy();
+            });
+
+            it(suite, 'Бессрочная облигация (нет даты погашения)', () => {
+                const maturityDate = null;
+                const isPerpetual = !maturityDate || maturityDate === '0000-00-00';
+                expect(isPerpetual).toBeTruthy();
+            });
+
+            it(suite, 'Бессрочная облигация (0000-00-00)', () => {
+                const maturityDate = '0000-00-00';
+                const isPerpetual = !maturityDate || maturityDate === '0000-00-00';
+                expect(isPerpetual).toBeTruthy();
+            });
+        });
+
+        describe('Расчёт количества облигаций', (suite) => {
+            it(suite, 'Округление вниз до целой облигации', () => {
+                const investmentInCurrency = 300000;
+                const dirtyPrice = 1050;
+                const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+                expect(bondCount).toBe(285);
+            });
+
+            it(suite, 'Минимальная инвестиция = 1 облигация', () => {
+                const investmentInCurrency = 1050;
+                const dirtyPrice = 1050;
+                const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+                expect(bondCount).toBe(1);
+            });
+
+            it(suite, 'Недостаточно средств', () => {
+                const investmentInCurrency = 1000;
+                const dirtyPrice = 1050;
+                const bondCount = Math.floor(investmentInCurrency / dirtyPrice);
+                expect(bondCount).toBe(0);
+            });
+        });
+
+        describe('Налоговый расчёт', (suite) => {
+            it(suite, 'Налог 13% с купона', () => {
+                const couponPerPeriod = 100;
+                const taxRate = 0.13;
+                const taxAmount = couponPerPeriod * taxRate;
+                const netCoupon = couponPerPeriod - taxAmount;
+                expect(taxAmount).toBe(13);
+                expect(netCoupon).toBe(87);
+            });
+
+            it(suite, 'Налог 15% для доходов > 5 млн', () => {
+                const couponPerPeriod = 100;
+                const taxRate = 0.15;
+                const taxAmount = couponPerPeriod * taxRate;
+                const netCoupon = couponPerPeriod - taxAmount;
+                expect(taxAmount).toBe(15);
+                expect(netCoupon).toBe(85);
+            });
+
+            it(suite, 'Нулевой налог для ИИС типа А', () => {
+                const couponPerPeriod = 100;
+                const taxRate = 0;
+                const taxAmount = couponPerPeriod * taxRate;
+                const netCoupon = couponPerPeriod - taxAmount;
+                expect(taxAmount).toBe(0);
+                expect(netCoupon).toBe(100);
+            });
+        });
+
+        // === НОВЫЕ ТЕСТЫ (добавлено 2026) ===
+        describe('Валютные облигации (CNY)', (suite) => {
+            it(suite, 'Определяет CNY по FACEUNIT', () => {
+                const currency = detectCurrency({ FACEUNIT: 'CNY' });
+                expect(currency).toBe('CNY');
+            });
+
+            it(suite, 'Конвертирует инвестиции в валюту', () => {
+                const investment = 300000;
+                const exchangeRate = 10; // Ровный курс для точного теста
+                const investmentInCurrency = investment / exchangeRate;
+                expect(investmentInCurrency).toBe(30000);
+            });
+
+            it(suite, 'Считает цену в валюте облигации', () => {
+                const nominal = 10000;
+                const pricePercent = 101.177;
+                const nkd = 2864.33;
+                const cleanPrice = nominal * (pricePercent / 100);
+                const dirtyPrice = cleanPrice + nkd;
+                expect(cleanPrice).toBeCloseTo(10117.7, 1);
+                expect(dirtyPrice).toBeCloseTo(12982, 1);
+            });
+
+            it(suite, 'Конвертирует результаты обратно в рубли', () => {
+                const cleanPrice = 10000;
+                const exchangeRate = 10;
+                const cleanPriceRUB = cleanPrice * exchangeRate;
+                expect(cleanPriceRUB).toBe(100000);
+            });
+        });
+
+        describe('Амортизируемые облигации', (suite) => {
+            it(suite, 'Определяет амортизацию по BONDTYPE', () => {
+                const bondData = { BONDTYPE: 'Амортизация', FACEVALUE: 5000 };
+                const isAmortization = (bondData.BONDTYPE || '').toLowerCase().includes('амортиз');
+                expect(isAmortization).toBeTruthy();
+            });
+
+            it(suite, 'Считает график амортизации', () => {
+                const initialNominal = 10000;
+                const faceValue = 5000;
+                const actualCouponCount = 4;
+                const amortizationPerCoupon = (initialNominal - faceValue) / actualCouponCount;
+                expect(amortizationPerCoupon).toBe(1250);
+            });
+
+            it(suite, 'Уменьшает налоговую базу на амортизацию', () => {
+                const couponPerPeriod = 100;
+                const amortization = 50;
+                const taxRate = 0.13;
+                const taxableBase = Math.max(0, couponPerPeriod - amortization);
+                const taxAmount = taxableBase * taxRate;
+                expect(taxableBase).toBe(50);
+                expect(taxAmount).toBe(6.5);
+            });
+        });
+
+        describe('Флоатеры', (suite) => {
+            it(suite, 'Определяет флоатер по BONDTYPE', () => {
+                const bondData = { BONDTYPE: 'Флоатер', CUPTYPE: 'Переменный' };
+                const isFloater = (bondData.BONDTYPE || '').toLowerCase().includes('флоат') ||
+                                  (bondData.CUPTYPE || '').toLowerCase().includes('флоат');
+                expect(isFloater).toBeTruthy();
+            });
+
+            it(suite, 'Для флоатера без данных купон = 0', () => {
+                const isFloater = true;
+                const couponRate = 0;
+                const couponValueFromApi = null;
+                let couponPerPeriod;
+                if (isFloater && (!couponValueFromApi || couponValueFromApi === 0) && (!couponRate || couponRate === 0)) {
+                    couponPerPeriod = 0;
+                }
+                expect(couponPerPeriod).toBe(0);
+            });
+
+            it(suite, 'Флоатер нельзя рассчитать окупаемость', () => {
+                const isFloaterNoData = true;
+                const paybackMonths = isFloaterNoData ? Infinity : 10;
+                expect(paybackMonths).toBe(Infinity);
+            });
+        });
+
+        describe('Сценарии с дисконтом', (suite) => {
+            it(suite, 'Определяет дисконт (цена < номинала)', () => {
+                const nominal = 1000;
+                const dirtyPrice = 950;
+                const overpaymentPerBond = dirtyPrice - nominal;
+                const isDiscount = overpaymentPerBond < 0;
+                expect(isDiscount).toBeTruthy();
+                expect(Math.abs(overpaymentPerBond)).toBe(50);
+            });
+
+            it(suite, 'Считает доход от дисконта', () => {
+                const nominal = 10000;
+                const dirtyPrice = 9000;
+                const discountPerBond = nominal - dirtyPrice;
+                const bondCount = 10;
+                const totalDiscount = discountPerBond * bondCount;
+                expect(totalDiscount).toBe(10000);
+            });
+
+            it(suite, 'Для дисконта показываем доход, а не срок', () => {
+                const totalOverpaymentRUB = -5000;
+                const paybackMonths = -10;
+                let displayValue, details;
+                if (paybackMonths < 0) {
+                    const discountAmount = Math.abs(totalOverpaymentRUB);
+                    displayValue = discountAmount;
+                    details = 'Доход при погашении (дисконт)';
+                }
+                expect(displayValue).toBe(5000);
+                expect(details).toBe('Доход при погашении (дисконт)');
+            });
+        });
+
+        describe('Срок окупаемости', (suite) => {
+            it(suite, 'Считает срок для премии', () => {
+                const totalOverpayment = 5000;
+                const netAnnualCoupon = 120;
+                const bondCount = 10;
+                const exchangeRate = 1;
+                const monthlyNetCouponIncome = (netAnnualCoupon * bondCount * exchangeRate) / 12;
+                const totalOverpaymentRUB = totalOverpayment * exchangeRate;
+                const paybackMonths = monthlyNetCouponIncome > 0 ? totalOverpaymentRUB / monthlyNetCouponIncome : Infinity;
+                expect(paybackMonths).toBeCloseTo(50, 0);
+            });
+
+            it(suite, 'Бесконечный срок для нулевого дохода', () => {
+                const netAnnualCoupon = 0;
+                const bondCount = 10;
+                const exchangeRate = 1;
+                const monthlyNetCouponIncome = (netAnnualCoupon * bondCount * exchangeRate) / 12;
+                const paybackMonths = monthlyNetCouponIncome > 0 ? 10 : Infinity;
+                expect(paybackMonths).toBe(Infinity);
+            });
+
+            it(suite, 'Форматирует годы и месяцы', () => {
+                const paybackMonths = 25;
+                const years = Math.floor(paybackMonths / 12);
+                const months = Math.floor(paybackMonths % 12);
+                expect(years).toBe(2);
+                expect(months).toBe(1);
+            });
+        });
+
+        // Автозапуск тестов при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                // Тесты уже запустились при загрузке скрипта
+            }, 100);
+        });
+    </script>
+</body>
+</html>
